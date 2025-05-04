@@ -1,7 +1,7 @@
 "use client"
 
 import { initializeApp, getApps, getApp } from "firebase/app"
-import { getAuth, onAuthStateChanged } from "firebase/auth"
+import { getAuth, onAuthStateChanged, type Auth } from "firebase/auth"
 import { getFirestore, enableIndexedDbPersistence, type Firestore } from "firebase/firestore"
 import { getAnalytics } from "firebase/analytics"
 
@@ -19,7 +19,7 @@ const firebaseConfig = {
 // Initialize Firebase
 let app
 let analytics
-let auth
+let auth: Auth
 let db: Firestore
 
 // Only initialize Firebase if we're on the client side

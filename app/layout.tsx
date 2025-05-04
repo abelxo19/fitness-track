@@ -8,8 +8,7 @@ const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "Fitness Tracker",
-  description: "Track your fitness and nutrition goals",
-    generator: 'v0.dev'
+  description: "Track your fitness and nutrition goals"
 }
 
 export default function RootLayout({
