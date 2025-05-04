@@ -514,4 +514,26 @@ export default function AnalyticsPage() {
                               </div>
                               <div>
                                 <p className="text-sm text-muted-foreground">Duration</p>
-                                <p className="text-lg f
+                                <p className="text-lg font-medium">{report.stats.duration} min</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <Card>
+                  <CardContent className="pt-6">
+                    <p className="text-center text-muted-foreground">No weekly reports available yet.</p>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+          </Tabs>
+        </>
+      )}
+    </div>
+  )
+}

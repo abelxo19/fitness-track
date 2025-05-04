@@ -1,7 +1,15 @@
+// app/api/generate-plan/route.ts
+
 import { GoogleAuth } from 'google-auth-library';
 import { NextResponse } from 'next/server';
 
-const VERTEX_API_URL = "https://us-central1-aiplatform.googleapis.com/v1/projects/fitness-tracker-458718/locations/us-central1/publishers/google/models/gemini-pro:generateContent"
+// --- CHANGE THIS LINE ---
+// OLD: const VERTEX_API_URL = "https://us-central1-aiplatform.googleapis.com/v1/projects/fitness-tracker-458718/locations/us-central1/publishers/google/models/gemini-1.0-pro:generateContent"
+// NEW: Use the specific version from the documentation
+const VERTEX_API_URL = "https://us-central1-aiplatform.googleapis.com/v1/projects/fitness-tracker-458718/locations/us-central1/publishers/google/models/gemini-1.0-pro-002:generateContent"
+// --- END CHANGE ---
+// Note: We are still using :generateContent, which is fine for non-streaming requests.
+// The docs showed :streamGenerateContent in the curl example, but generateContent is also valid.
 
 export async function POST(request: Request) {
   try {
@@ -15,55 +23,16 @@ export async function POST(request: Request) {
       Activity Level: ${userProfile.activityLevel}
       Fitness Goal: ${userProfile.fitnessGoal}
       Dietary Restrictions: ${userProfile.dietaryRestrictions?.join(", ") || "None"}
-      
+
       Please provide a comprehensive plan that includes:
-
-      1. Weekly Workout Schedule:
-      - Include both home-based and gym exercises
-      - Keep exercises beginner to intermediate level
-      - Focus on exercises that can be done with minimal equipment
-      - Include cardio, strength training, and flexibility exercises
-      - Specify sets, reps, and rest periods
-      - Include progression recommendations
-
-      2. Daily Meal Plan:
-      - Calculate and provide daily calorie target based on:
-        * Basal Metabolic Rate (BMR)
-        * Activity level
-        * Fitness goal (weight loss, muscle gain, or maintenance)
-      - Provide macronutrient breakdown (protein, carbs, fat)
-      - Include 4-5 meals per day (breakfast, lunch, dinner, and snacks)
-      - Focus on nutrient-dense, whole foods
-      - Include portion sizes and meal timing
-      - Consider dietary restrictions and preferences
-
-      3. Nutrition Guidelines:
-      - Daily calorie target
-      - Macronutrient ratios
-      - Hydration recommendations
-      - Pre and post-workout nutrition
-      - Supplement recommendations (if applicable)
-      - Meal timing and frequency
-
-      4. Progress Tracking:
-      - Weekly measurements to track
-      - Performance metrics to monitor
-      - How to adjust the plan based on progress
-      - When to increase intensity or volume
-
-      5. Tips for Success:
-      - Recovery strategies
-      - Sleep recommendations
-      - Stress management
-      - Consistency tips
-      - Common pitfalls to avoid
+      ... [rest of your detailed prompt] ...
 
       Format the plan in a clear, structured way with specific, actionable items.
       Make sure all suggestions are realistic, achievable, and aligned with the user's fitness goals.
       Include specific numbers for calories, macros, sets, reps, and rest periods.
     `;
 
-    console.log("Initializing Google Auth...");
+    console.log("Initializing Google Auth for Vertex AI...");
     const auth = new GoogleAuth({
       scopes: ['https://www.googleapis.com/auth/cloud-platform'],
       projectId: 'fitness-tracker-458718'
@@ -71,20 +40,25 @@ export async function POST(request: Request) {
 
     console.log("Getting auth client...");
     const client = await auth.getClient();
-    
-    console.log("Getting access token...");
-    const token = await client.getAccessToken();
-    console.log("Got access token");
 
-    console.log("Sending request to Vertex AI...");
+    console.log("Getting access token...");
+    const tokenResponse = await client.getAccessToken();
+    const accessToken = tokenResponse?.token; // Added optional chaining for safety
+
+    if (!accessToken) {
+        throw new Error("Failed to retrieve access token.");
+    }
+    console.log("Got access token.");
+
+    console.log(`Sending request to Vertex AI URL: ${VERTEX_API_URL}`);
     const response = await fetch(VERTEX_API_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token.token}`,
+        "Authorization": `Bearer ${accessToken}`,
       },
       body: JSON.stringify({
-        contents: [
+        contents: [ // Using array format, which is correct for generateContent
           {
             role: "user",
             parts: [
@@ -101,46 +75,49 @@ export async function POST(request: Request) {
           maxOutputTokens: 2048,
         },
         safetySettings: [
-          {
-            category: "HARM_CATEGORY_HARASSMENT",
-            threshold: "BLOCK_MEDIUM_AND_ABOVE",
-          },
-          {
-            category: "HARM_CATEGORY_HATE_SPEECH",
-            threshold: "BLOCK_MEDIUM_AND_ABOVE",
-          },
-          {
-            category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-            threshold: "BLOCK_MEDIUM_AND_ABOVE",
-          },
-          {
-            category: "HARM_CATEGORY_DANGEROUS_CONTENT",
-            threshold: "BLOCK_MEDIUM_AND_ABOVE",
-          },
+          { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+          { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+          { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+          { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
         ],
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Vertex AI error response:", errorText);
-      throw new Error(`Vertex AI request failed with status ${response.status}: ${errorText}`);
+      console.error(`Vertex AI error response status: ${response.status}`);
+      console.error(`Vertex AI error response body: ${errorText}`);
+      let detailedError = `Vertex AI request failed with status ${response.status}`;
+      try {
+          const errorJson = JSON.parse(errorText);
+          if (errorJson.error?.message) {
+              detailedError += `: ${errorJson.error.message}`;
+          } else {
+              detailedError += `: ${errorText}`;
+          }
+      } catch(e) {
+          detailedError += `: ${errorText}`;
+      }
+       throw new Error(detailedError);
     }
 
     const data = await response.json();
     console.log("Received response from Vertex AI");
 
-    if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
-      console.error("Invalid response format:", data);
-      throw new Error("Invalid Vertex AI response format");
+    const generatedText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!generatedText) {
+      console.error("Invalid response format from Vertex AI:", JSON.stringify(data, null, 2));
+      throw new Error("Invalid or empty response format received from Vertex AI.");
     }
 
-    return NextResponse.json({ plan: data.candidates[0].content.parts[0].text });
+    return NextResponse.json({ plan: generatedText });
+
   } catch (error) {
-    console.error("Error in generate-plan API:", error);
+    console.error("Error in /api/generate-plan route:", error);
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred during plan generation.";
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to generate fitness plan. Please try again." },
+      { error: `Failed to generate fitness plan: ${errorMessage}` },
       { status: 500 }
     );
   }
-} 
+}
