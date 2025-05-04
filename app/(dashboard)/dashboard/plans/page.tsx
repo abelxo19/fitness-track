@@ -3,15 +3,17 @@
 import { useState, useEffect } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { getUserProfile, getUserPlans, savePlan } from "@/lib/firestore"
-import { generateFitnessPlan, type UserProfile } from "@/lib/gemini"
+import { generateFitnessPlan, type UserProfile, FitnessPlan } from "@/lib/gemini"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { AlertCircle, Calendar, Dumbbell, RefreshCcw, Utensils, Clock, Flame, ArrowRight } from "lucide-react"
+import { AlertCircle, Calendar, Dumbbell, RefreshCcw, Utensils, Clock, Flame, ArrowRight, Activity } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 // Add interfaces for plan content
 interface PlanContent {
@@ -19,6 +21,150 @@ interface PlanContent {
   createdAt: {
     seconds: number
   }
+}
+
+// Create a separate component for the plan content
+function PlanContent({ planData }: { planData: FitnessPlan }) {
+  const [selectedDay, setSelectedDay] = useState("1");
+
+  return (
+    <div className="space-y-6">
+      {/* Initial Assessment */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Activity className="h-5 w-5" />
+            Initial Assessment
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">{planData.initialAssessment}</p>
+        </CardContent>
+      </Card>
+
+      {/* Daily View Selector */}
+      <div className="flex items-center gap-4">
+        <Select value={selectedDay} onValueChange={setSelectedDay}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Select day" />
+          </SelectTrigger>
+          <SelectContent>
+            {planData.workoutPlan.weeklySplit.map((day, index) => (
+              <SelectItem key={index} value={String(index + 1)}>
+                {day.day}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Selected Day's Plan */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Workout Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Dumbbell className="h-5 w-5" />
+              Today's Workout
+            </CardTitle>
+            <CardDescription>
+              {planData.workoutPlan.weeklySplit[parseInt(selectedDay) - 1].focus}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ScrollArea className="h-[400px] pr-4">
+              <div className="space-y-4">
+                {planData.workoutPlan.weeklySplit[parseInt(selectedDay) - 1].exercises.map((exercise, index) => (
+                  <div key={index} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium">{exercise.name}</h4>
+                      <div className="flex gap-2">
+                        <Badge variant="outline">{exercise.sets}</Badge>
+                        <Badge variant="outline">{exercise.reps}</Badge>
+                      </div>
+                    </div>
+                    {exercise.notes && (
+                      <p className="text-sm text-muted-foreground">{exercise.notes}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+
+        {/* Nutrition Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Utensils className="h-5 w-5" />
+              Today's Meals
+            </CardTitle>
+            <CardDescription>
+              Daily Target: {planData.nutritionPlan.dailyCalories}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ScrollArea className="h-[400px] pr-4">
+              <div className="space-y-6">
+                {/* Macros Summary */}
+                <div className="grid grid-cols-3 gap-4 p-4 bg-muted/30 rounded-lg">
+                  <div className="text-center">
+                    <p className="text-sm font-medium">Protein</p>
+                    <p className="text-lg font-bold">{planData.nutritionPlan.macros.protein}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-medium">Carbs</p>
+                    <p className="text-lg font-bold">{planData.nutritionPlan.macros.carbs}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-medium">Fats</p>
+                    <p className="text-lg font-bold">{planData.nutritionPlan.macros.fats}</p>
+                  </div>
+                </div>
+
+                {/* Meals */}
+                <div className="space-y-4">
+                  {planData.nutritionPlan.mealPlans[parseInt(selectedDay) - 1]?.meals.map((meal, index) => (
+                    <div key={index} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium">{meal.name}</h4>
+                        <Badge variant="secondary">{meal.calories}</Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{meal.description}</p>
+                      <Badge variant="outline">{meal.macros}</Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Tips Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            Tips For Success
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ScrollArea className="h-[200px] pr-4">
+            <ul className="space-y-2">
+              {planData.dietaryTips.map((tip, index) => (
+                <li key={index} className="flex items-start gap-2">
+                  <ArrowRight className="h-4 w-4 mt-1 flex-shrink-0 text-primary" />
+                  <span>{tip}</span>
+                </li>
+              ))}
+            </ul>
+          </ScrollArea>
+        </CardContent>
+      </Card>
+    </div>
+  );
 }
 
 export default function PersonalizedPlansPage() {
@@ -100,7 +246,7 @@ export default function PersonalizedPlansPage() {
       try {
         if (user) {
           await savePlan(user.uid, {
-            content: generatedPlan,
+            content: JSON.stringify(generatedPlan),
             createdAt: new Date(),
           })
           console.log("Plan saved to Firestore")
@@ -112,7 +258,7 @@ export default function PersonalizedPlansPage() {
 
       // Update the local state
       setPlan({
-        content: generatedPlan,
+        content: JSON.stringify(generatedPlan),
         createdAt: { seconds: Date.now() / 1000 },
       })
     } catch (error: any) {
@@ -121,245 +267,6 @@ export default function PersonalizedPlansPage() {
     } finally {
       setGenerating(false)
     }
-  }
-
-  // Function to parse and format the plan content
-  const formatPlanContent = (content: string) => {
-    // Split the content into sections
-    const sections = content.split(/\n\n+/)
-
-    return (
-      <div className="space-y-6">
-        {sections.map((section: string, index: number) => {
-          // Check if this is a header section
-          if (section.includes("===") || section.toUpperCase() === section) {
-            return (
-              <div key={index} className="pt-4">
-                <h2 className="text-xl font-bold text-primary mb-2">{section.replace(/=/g, "").trim()}</h2>
-                <Separator className="my-2" />
-              </div>
-            )
-          }
-
-          // Check if this is a workout day section
-          else if (
-            section.match(/monday|tuesday|wednesday|thursday|friday|saturday|sunday/i) &&
-            (section.includes("Workout") || section.includes("workout") || section.includes("WORKOUT"))
-          ) {
-            const dayMatch = section.match(/(monday|tuesday|wednesday|thursday|friday|saturday|sunday):/i)
-            const day = dayMatch ? dayMatch[1].charAt(0).toUpperCase() + dayMatch[1].slice(1).toLowerCase() : "Day"
-
-            return (
-              <div key={index} className="bg-secondary/20 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <Dumbbell className="h-5 w-5 text-primary" />
-                  <h3 className="text-lg font-semibold">{day}</h3>
-                </div>
-                <div className="pl-2 border-l-2 border-primary/30">
-                  {section.split("\n").map((line: string, lineIndex: number) => (
-                    <p key={lineIndex} className="py-0.5">
-                      {line}
-                    </p>
-                  ))}
-                </div>
-              </div>
-            )
-          }
-
-          // Check if this is a meal section
-          else if (
-            section.includes("Breakfast") ||
-            section.includes("Lunch") ||
-            section.includes("Dinner") ||
-            section.includes("Snack") ||
-            section.includes("MEAL PLAN") ||
-            section.includes("Meal Plan")
-          ) {
-            return (
-              <div key={index} className="bg-green-50 dark:bg-green-950/20 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <Utensils className="h-5 w-5 text-green-600 dark:text-green-400" />
-                  <h3 className="text-lg font-semibold">Nutrition</h3>
-                </div>
-                <div className="pl-2 border-l-2 border-green-300 dark:border-green-700">
-                  {section.split("\n").map((line: string, lineIndex: number) => {
-                    // Highlight meal types
-                    if (
-                      line.includes("Breakfast") ||
-                      line.includes("Lunch") ||
-                      line.includes("Dinner") ||
-                      line.includes("Snack")
-                    ) {
-                      return (
-                        <p key={lineIndex} className="font-medium text-green-700 dark:text-green-300 py-1">
-                          {line}
-                        </p>
-                      )
-                    }
-                    return (
-                      <p key={lineIndex} className="py-0.5">
-                        {line}
-                      </p>
-                    )
-                  })}
-                </div>
-              </div>
-            )
-          }
-
-          // Check if this is a calorie/macros section
-          else if (
-            section.includes("Calorie") ||
-            section.includes("calorie") ||
-            section.includes("Protein") ||
-            section.includes("protein") ||
-            section.includes("Carb") ||
-            section.includes("Fat")
-          ) {
-            return (
-              <div key={index} className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <Flame className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                  <h3 className="text-lg font-semibold">Nutrition Targets</h3>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {section.split("\n").map((line: string, lineIndex: number) => {
-                    if (line.includes(":")) {
-                      const [label, value] = line.split(":")
-                      return (
-                        <div
-                          key={lineIndex}
-                          className="flex justify-between items-center border-b border-blue-100 dark:border-blue-800 py-2"
-                        >
-                          <span className="font-medium">{label.trim()}</span>
-                          <Badge variant="secondary" className="ml-2">
-                            {value.trim()}
-                          </Badge>
-                        </div>
-                      )
-                    }
-                    return (
-                      <p key={lineIndex} className="py-0.5 col-span-2">
-                        {line}
-                      </p>
-                    )
-                  })}
-                </div>
-              </div>
-            )
-          }
-
-          // Check if this is a tips section
-          else if (section.includes("TIPS") || section.includes("Tips") || section.includes("tips")) {
-            return (
-              <div key={index} className="bg-amber-50 dark:bg-amber-950/20 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                  <h3 className="text-lg font-semibold">Tips For Success</h3>
-                </div>
-                <ul className="space-y-2 pl-2">
-                  {section.split("\n").map((line: string, lineIndex: number) => {
-                    // Skip the header line
-                    if (line.includes("TIPS") || line.includes("Tips") || line.includes("tips")) {
-                      return null
-                    }
-
-                    // Format numbered tips
-                    const tipMatch = line.match(/^\d+\.\s+(.+)/)
-                    if (tipMatch) {
-                      return (
-                        <li key={lineIndex} className="flex items-start gap-2">
-                          <ArrowRight className="h-4 w-4 mt-1 flex-shrink-0 text-amber-600 dark:text-amber-400" />
-                          <span>{tipMatch[1]}</span>
-                        </li>
-                      )
-                    }
-
-                    if (line.trim()) {
-                      return (
-                        <li key={lineIndex} className="py-0.5">
-                          {line}
-                        </li>
-                      )
-                    }
-
-                    return null
-                  })}
-                </ul>
-              </div>
-            )
-          }
-
-          // Default formatting for other sections
-          else if (section.trim()) {
-            return (
-              <div key={index} className="prose dark:prose-invert max-w-none">
-                {section.split("\n").map((line: string, lineIndex: number) => (
-                  <p key={lineIndex} className="py-0.5">
-                    {line}
-                  </p>
-                ))}
-              </div>
-            )
-          }
-
-          return null
-        })}
-      </div>
-    )
-  }
-
-  // Function to extract workout section from plan content
-  const extractWorkoutSection = (content: string) => {
-    // Look for workout section - typically contains words like "WORKOUT SCHEDULE" or "WEEKLY WORKOUT"
-    const workoutMatch = content.match(
-      /(?:WEEKLY\s+WORKOUT\s+SCHEDULE:|WORKOUT\s+PLAN:|WORKOUT\s+SCHEDULE:)[\s\S]+?(?=DAILY\s+MEAL\s+PLAN:|NUTRITION\s+PLAN:|MEAL\s+PLAN:|CALORIE\s+AND\s+MACRONUTRIENT|$)/i,
-    )
-
-    if (workoutMatch) {
-      return formatPlanContent(workoutMatch[0])
-    }
-
-    // Fallback: just look for sections with workout-related terms
-    const sections = content.split(/\n\n+/)
-    const workoutSections = sections.filter(
-      (section: string) =>
-        section.match(
-          /workout|exercise|training|cardio|strength|monday|tuesday|wednesday|thursday|friday|saturday|sunday/i,
-        ) && !section.match(/meal|nutrition|calorie|protein|carb|fat/i),
-    )
-
-    if (workoutSections.length > 0) {
-      return formatPlanContent(workoutSections.join("\n\n"))
-    }
-
-    return <p>No workout section found in the plan.</p>
-  }
-
-  // Function to extract nutrition section from plan content
-  const extractNutritionSection = (content: string) => {
-    // Look for nutrition section - typically contains words like "MEAL PLAN" or "NUTRITION"
-    const nutritionMatch = content.match(
-      /(?:DAILY\s+MEAL\s+PLAN:|NUTRITION\s+PLAN:|MEAL\s+PLAN:|CALORIE\s+AND\s+MACRONUTRIENT)[\s\S]+?(?=TIPS\s+FOR\s+SUCCESS:|$)/i,
-    )
-
-    if (nutritionMatch) {
-      return formatPlanContent(nutritionMatch[0])
-    }
-
-    // Fallback: just look for sections with nutrition-related terms
-    const sections = content.split(/\n\n+/)
-    const nutritionSections = sections.filter(
-      (section: string) =>
-        section.match(/meal|nutrition|calorie|protein|carb|fat|breakfast|lunch|dinner|snack/i) &&
-        !section.match(/workout|exercise|training|cardio|strength/i),
-    )
-
-    if (nutritionSections.length > 0) {
-      return formatPlanContent(nutritionSections.join("\n\n"))
-    }
-
-    return <p>No nutrition section found in the plan.</p>
   }
 
   if (loading) {
@@ -525,309 +432,130 @@ export default function PersonalizedPlansPage() {
               </TabsList>
 
               <div className="p-6">
-                <TabsContent value="all" className="mt-0 space-y-6">
-                  <div className="prose dark:prose-invert max-w-none">
-                    {plan.content.split(/\n{2,}/).map((section: string, idx: number) => {
-                      // Format headers (all caps or with ===)
-                      if (section.toUpperCase() === section && section.length > 10) {
-                        return (
-                          <div key={idx} className="mt-6">
-                            <h2 className="text-xl font-bold text-primary border-b pb-1">{section}</h2>
-                          </div>
-                        )
-                      }
+                <TabsContent value="all" className="mt-0">
+                  {(() => {
+                    try {
+                      const planData = JSON.parse(plan.content) as FitnessPlan;
+                      return <PlanContent planData={planData} />;
+                    } catch (error) {
+                      console.error("Error parsing plan content:", error);
+                      return <p>Error displaying plan content. Please try generating a new plan.</p>;
+                    }
+                  })()}
+                </TabsContent>
 
-                      // Format workout days
-                      if (/monday|tuesday|wednesday|thursday|friday|saturday|sunday/i.test(section)) {
-                        const dayMatch = section.match(/(monday|tuesday|wednesday|thursday|friday|saturday|sunday):/i)
-                        const day = dayMatch ? dayMatch[1].toUpperCase() : ""
-
-                        return (
-                          <div key={idx} className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 my-4">
-                            {day && (
-                              <h3 className="flex items-center gap-2 font-bold text-blue-700 dark:text-blue-300 mb-2">
-                                <Dumbbell className="h-5 w-5" />
-                                {day}
-                              </h3>
-                            )}
-                            <div className="pl-4 border-l-2 border-blue-200 dark:border-blue-700">
-                              {section.split("\n").map((line: string, lineIdx: number) => (
-                                <p key={lineIdx} className="my-1">
-                                  {line}
-                                </p>
-                              ))}
-                            </div>
-                          </div>
-                        )
-                      }
-
-                      // Format meal sections
-                      if (/breakfast|lunch|dinner|snack|meal plan/i.test(section)) {
-                        return (
-                          <div key={idx} className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 my-4">
-                            <h3 className="flex items-center gap-2 font-bold text-green-700 dark:text-green-300 mb-2">
-                              <Utensils className="h-5 w-5" />
-                              MEAL PLAN
-                            </h3>
-                            <div className="pl-4 border-l-2 border-green-200 dark:border-green-700">
-                              {section.split("\n").map((line: string, lineIdx: number) => {
-                                // Highlight meal types
-                                if (/breakfast|lunch|dinner|snack/i.test(line)) {
-                                  return (
-                                    <h4
-                                      key={lineIdx}
-                                      className="font-bold text-green-600 dark:text-green-400 mt-3 mb-2"
-                                    >
-                                      {line}
-                                    </h4>
-                                  )
-                                }
-                                return (
-                                  <p key={lineIdx} className="my-1">
-                                    {line}
-                                  </p>
-                                )
-                              })}
-                            </div>
-                          </div>
-                        )
-                      }
-
-                      // Format calorie/macro sections
-                      if (/calorie|protein|carb|fat/i.test(section) && /target|goal|macro/i.test(section)) {
-                        return (
-                          <div key={idx} className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 my-4">
-                            <h3 className="flex items-center gap-2 font-bold text-purple-700 dark:text-purple-300 mb-2">
-                              <Flame className="h-5 w-5" />
-                              NUTRITION TARGETS
-                            </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                              {section.split("\n").map((line: string, lineIdx: number) => {
-                                if (line.includes(":")) {
-                                  const [label, value] = line.split(":")
-                                  return (
-                                    <div
-                                      key={lineIdx}
-                                      className="flex justify-between items-center border-b border-purple-100 dark:border-purple-800 py-2"
-                                    >
-                                      <span className="font-medium">{label.trim()}</span>
-                                      <Badge variant="outline" className="bg-purple-100 dark:bg-purple-800">
-                                        {value.trim()}
-                                      </Badge>
-                                    </div>
-                                  )
-                                }
-                                return (
-                                  <p key={lineIdx} className="col-span-2 my-1">
-                                    {line}
-                                  </p>
-                                )
-                              })}
-                            </div>
-                          </div>
-                        )
-                      }
-
-                      // Format tips sections
-                      if (/tips|success/i.test(section)) {
-                        return (
-                          <div key={idx} className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-4 my-4">
-                            <h3 className="flex items-center gap-2 font-bold text-amber-700 dark:text-amber-300 mb-2">
-                              <Clock className="h-5 w-5" />
-                              TIPS FOR SUCCESS
-                            </h3>
-                            <ul className="space-y-2 list-none pl-0">
-                              {section.split("\n").map((line: string, lineIdx: number) => {
-                                // Skip header line
-                                if (/tips|success/i.test(line) && lineIdx === 0) return null
-
-                                // Format numbered tips
-                                const tipMatch = line.match(/^\d+\.\s+(.+)/)
-                                if (tipMatch) {
-                                  return (
-                                    <li key={lineIdx} className="flex items-start gap-2">
-                                      <ArrowRight className="h-4 w-4 mt-1 flex-shrink-0 text-amber-600" />
-                                      <span>{tipMatch[1]}</span>
-                                    </li>
-                                  )
-                                }
-
-                                if (line.trim()) {
-                                  return (
-                                    <li key={lineIdx} className="my-1">
-                                      {line}
-                                    </li>
-                                  )
-                                }
-
-                                return null
-                              })}
-                            </ul>
-                          </div>
-                        )
-                      }
-
-                      // Default formatting
+                <TabsContent value="workout" className="mt-0">
+                  {(() => {
+                    try {
+                      const planData = JSON.parse(plan.content) as FitnessPlan;
                       return (
-                        <div key={idx} className="my-4">
-                          {section.split("\n").map((line: string, lineIdx: number) => (
-                            <p key={lineIdx} className="my-1">
-                              {line}
-                            </p>
-                          ))}
-                        </div>
-                      )
-                    })}
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="workout" className="mt-0 space-y-6">
-                  <div className="prose dark:prose-invert max-w-none">
-                    {plan.content.split(/\n{2,}/).map((section: string, idx: number) => {
-                      // Only include workout-related sections
-                      if (
-                        (/workout|exercise|training|cardio|strength/i.test(section) &&
-                          !/meal|nutrition|calorie|protein|carb|fat/i.test(section)) ||
-                        /monday|tuesday|wednesday|thursday|friday|saturday|sunday/i.test(section)
-                      ) {
-                        // Format workout days
-                        if (/monday|tuesday|wednesday|thursday|friday|saturday|sunday/i.test(section)) {
-                          const dayMatch = section.match(/(monday|tuesday|wednesday|thursday|friday|saturday|sunday):/i)
-                          const day = dayMatch ? dayMatch[1].toUpperCase() : ""
-
-                          return (
-                            <div key={idx} className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 my-4">
-                              {day && (
-                                <h3 className="flex items-center gap-2 font-bold text-blue-700 dark:text-blue-300 mb-2">
-                                  <Dumbbell className="h-5 w-5" />
-                                  {day}
-                                </h3>
-                              )}
-                              <div className="pl-4 border-l-2 border-blue-200 dark:border-blue-700">
-                                {section.split("\n").map((line: string, lineIdx: number) => (
-                                  <p key={lineIdx} className="my-1">
-                                    {line}
-                                  </p>
-                                ))}
-                              </div>
-                            </div>
-                          )
-                        }
-
-                        // Format workout headers
-                        if (section.toUpperCase() === section && section.length > 10) {
-                          return (
-                            <div key={idx} className="mt-6">
-                              <h2 className="text-xl font-bold text-primary border-b pb-1">{section}</h2>
-                            </div>
-                          )
-                        }
-
-                        // Default workout section formatting
-                        return (
-                          <div key={idx} className="my-4">
-                            {section.split("\n").map((line: string, lineIdx: number) => (
-                              <p key={lineIdx} className="my-1">
-                                {line}
-                              </p>
-                            ))}
+                        <div className="space-y-6">
+                          {/* Workout Overview */}
+                          <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-4">
+                            <h3 className="text-lg font-semibold mb-2">Overview</h3>
+                            <p>{planData.workoutPlan.overview}</p>
                           </div>
-                        )
-                      }
-                      return null
-                    })}
-                  </div>
-                </TabsContent>
 
-                <TabsContent value="nutrition" className="mt-0 space-y-6">
-                  <div className="prose dark:prose-invert max-w-none">
-                    {plan.content.split(/\n{2,}/).map((section: string, idx: number) => {
-                      // Only include nutrition-related sections
-                      if (
-                        /meal|nutrition|calorie|protein|carb|fat|breakfast|lunch|dinner|snack/i.test(section) &&
-                        !/workout|exercise|training|cardio|strength/i.test(section)
-                      ) {
-                        // Format meal sections
-                        if (/breakfast|lunch|dinner|snack|meal plan/i.test(section)) {
-                          return (
-                            <div key={idx} className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 my-4">
-                              <h3 className="flex items-center gap-2 font-bold text-green-700 dark:text-green-300 mb-2">
-                                <Utensils className="h-5 w-5" />
-                                MEAL PLAN
-                              </h3>
-                              <div className="pl-4 border-l-2 border-green-200 dark:border-green-700">
-                                {section.split("\n").map((line: string, lineIdx: number) => {
-                                  // Highlight meal types
-                                  if (/breakfast|lunch|dinner|snack/i.test(line)) {
-                                    return (
-                                      <h4
-                                        key={lineIdx}
-                                        className="font-bold text-green-600 dark:text-green-400 mt-3 mb-2"
-                                      >
-                                        {line}
-                                      </h4>
-                                    )
-                                  }
-                                  return (
-                                    <p key={lineIdx} className="my-1">
-                                      {line}
-                                    </p>
-                                  )
-                                })}
-                              </div>
-                            </div>
-                          )
-                        }
-
-                        // Format calorie/macro sections
-                        if (/calorie|protein|carb|fat/i.test(section) && /target|goal|macro/i.test(section)) {
-                          return (
-                            <div key={idx} className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4 my-4">
-                              <h3 className="flex items-center gap-2 font-bold text-purple-700 dark:text-purple-300 mb-2">
-                                <Flame className="h-5 w-5" />
-                                NUTRITION TARGETS
-                              </h3>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                {section.split("\n").map((line: string, lineIdx: number) => {
-                                  if (line.includes(":")) {
-                                    const [label, value] = line.split(":")
-                                    return (
-                                      <div
-                                        key={lineIdx}
-                                        className="flex justify-between items-center border-b border-purple-100 dark:border-purple-800 py-2"
-                                      >
-                                        <span className="font-medium">{label.trim()}</span>
-                                        <Badge variant="outline" className="bg-purple-100 dark:bg-purple-800">
-                                          {value.trim()}
-                                        </Badge>
+                          {/* Weekly Split */}
+                          <div className="space-y-4">
+                            {planData.workoutPlan.weeklySplit.map((day, index) => (
+                              <div key={index} className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-4">
+                                <div className="flex items-center gap-2 mb-3">
+                                  <Dumbbell className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                                  <h3 className="text-lg font-semibold">{day.day}</h3>
+                                  <Badge variant="outline" className="ml-2">{day.focus}</Badge>
+                                </div>
+                                <div className="space-y-3">
+                                  {day.exercises.map((exercise, exIndex) => (
+                                    <div key={exIndex} className="border-l-2 border-blue-300 dark:border-blue-700 pl-4">
+                                      <h4 className="font-medium">{exercise.name}</h4>
+                                      <div className="flex gap-2 mt-1">
+                                        <Badge variant="outline">{exercise.sets}</Badge>
+                                        <Badge variant="outline">{exercise.reps}</Badge>
                                       </div>
-                                    )
-                                  }
-                                  return (
-                                    <p key={lineIdx} className="col-span-2 my-1">
-                                      {line}
-                                    </p>
-                                  )
-                                })}
+                                      {exercise.notes && (
+                                        <p className="text-sm text-muted-foreground mt-1">{exercise.notes}</p>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
-                            </div>
-                          )
-                        }
-
-                        // Default nutrition section formatting
-                        return (
-                          <div key={idx} className="my-4">
-                            {section.split("\n").map((line: string, lineIdx: number) => (
-                              <p key={lineIdx} className="my-1">
-                                {line}
-                              </p>
                             ))}
                           </div>
-                        )
-                      }
-                      return null
-                    })}
-                  </div>
+                        </div>
+                      );
+                    } catch (error) {
+                      console.error("Error parsing workout plan:", error);
+                      return <p>Error displaying workout plan. Please try generating a new plan.</p>;
+                    }
+                  })()}
+                </TabsContent>
+
+                <TabsContent value="nutrition" className="mt-0">
+                  {(() => {
+                    try {
+                      const planData = JSON.parse(plan.content) as FitnessPlan;
+                      return (
+                        <div className="space-y-6">
+                          {/* Nutrition Overview */}
+                          <div className="bg-green-50 dark:bg-green-950/20 rounded-lg p-4">
+                            <h3 className="text-lg font-semibold mb-2">Overview</h3>
+                            <p>{planData.nutritionPlan.overview}</p>
+                          </div>
+
+                          {/* Daily Targets */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-4">
+                              <h3 className="text-lg font-semibold mb-2">Daily Calories</h3>
+                              <Badge variant="secondary" className="text-lg">{planData.nutritionPlan.dailyCalories}</Badge>
+                            </div>
+                            <div className="bg-purple-50 dark:bg-purple-950/20 rounded-lg p-4">
+                              <h3 className="text-lg font-semibold mb-2">Macronutrients</h3>
+                              <div className="space-y-2">
+                                <div className="flex justify-between">
+                                  <span>Protein</span>
+                                  <Badge variant="secondary">{planData.nutritionPlan.macros.protein}</Badge>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span>Carbs</span>
+                                  <Badge variant="secondary">{planData.nutritionPlan.macros.carbs}</Badge>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span>Fats</span>
+                                  <Badge variant="secondary">{planData.nutritionPlan.macros.fats}</Badge>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Meal Plans */}
+                          <div className="space-y-4">
+                            <h3 className="text-lg font-semibold">Meal Plans</h3>
+                            {planData.nutritionPlan.mealPlans.map((dayPlan, index) => (
+                              <div key={index} className="bg-green-50 dark:bg-green-950/20 rounded-lg p-4">
+                                <h4 className="font-semibold mb-2">{dayPlan.day}</h4>
+                                <div className="space-y-4">
+                                  {dayPlan.meals.map((meal, mealIndex) => (
+                                    <div key={mealIndex} className="border-l-2 border-green-300 dark:border-green-700 pl-4">
+                                      <h5 className="font-medium text-green-700 dark:text-green-300">{meal.name}</h5>
+                                      <p className="text-sm mt-1">{meal.description}</p>
+                                      <div className="flex gap-2 mt-2">
+                                        <Badge variant="outline">{meal.calories}</Badge>
+                                        <Badge variant="outline">{meal.macros}</Badge>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    } catch (error) {
+                      console.error("Error parsing nutrition plan:", error);
+                      return <p>Error displaying nutrition plan. Please try generating a new plan.</p>;
+                    }
+                  })()}
                 </TabsContent>
               </div>
             </Tabs>

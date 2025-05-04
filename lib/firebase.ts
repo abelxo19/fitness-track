@@ -7,13 +7,13 @@ import { getAnalytics } from "firebase/analytics"
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyDUvrKo19L47o9VZQzCyYLaF_0-BZWgQ8o",
-  authDomain: "fitness-tracker-458718.firebaseapp.com",
-  projectId: "fitness-tracker-458718",
-  storageBucket: "fitness-tracker-458718.firebasestorage.app",
-  messagingSenderId: "525096617878",
-  appId: "1:525096617878:web:c1f6ab6fe1eb0313527fb7",
-  measurementId: "G-6KFBNYRS8Y",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 }
 
 // Initialize Firebase
@@ -53,11 +53,13 @@ if (typeof window !== "undefined") {
     }
 
     // Only initialize analytics on the client side
-    try {
-      analytics = getAnalytics(app)
-      console.log("Analytics initialized")
-    } catch (error) {
-      console.error("Analytics initialization error:", error)
+    if (process.env.NODE_ENV === 'production') {
+      try {
+        analytics = getAnalytics(app)
+        console.log("Analytics initialized")
+      } catch (error) {
+        console.error("Analytics initialization error:", error)
+      }
     }
 
     console.log("Firebase initialized successfully with project:", firebaseConfig.projectId)
