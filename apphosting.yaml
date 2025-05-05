@@ -13,15 +13,11 @@ env:
     availability:
       - BUILD
       - RUNTIME
-
   - variable: NEXT_PUBLIC_GEMINI_API_KEY
-    secret: projects/fitness-tracker-458718/secrets/gemini-api-key
-    availability:
-      - BUILD
-      - RUNTIME
+    secret: gemini-api-key
 
   - variable: NEXT_PUBLIC_FIREBASE_API_KEY
-    secret: projects/fitness-tracker-458718/secrets/firebase-api-key
+    value: "AIzaSyDUvrKo19L47o9VZQzCyYLaF_0-BZWgQ8o"
     availability:
       - BUILD
       - RUNTIME
