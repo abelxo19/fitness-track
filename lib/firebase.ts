@@ -1,7 +1,14 @@
 "use client"
 
 import { initializeApp, getApps, getApp } from "firebase/app"
-import { getAuth, onAuthStateChanged, type Auth } from "firebase/auth"
+import { 
+  getAuth, 
+  onAuthStateChanged, 
+  type Auth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut
+} from "firebase/auth"
 import { getFirestore, enableIndexedDbPersistence, type Firestore } from "firebase/firestore"
 import { getAnalytics } from "firebase/analytics"
 
@@ -26,9 +33,21 @@ let db: Firestore
 if (typeof window !== "undefined") {
   try {
     // Check if Firebase is already initialized
-    app = getApps().length ? getApp() : initializeApp(firebaseConfig)
+    if (!getApps().length) {
+      app = initializeApp(firebaseConfig)
+      console.log("Firebase app initialized")
+    } else {
+      app = getApp()
+      console.log("Using existing Firebase app")
+    }
+
+    // Initialize auth
     auth = getAuth(app)
+    console.log("Firebase auth initialized")
+
+    // Initialize Firestore
     db = getFirestore(app)
+    console.log("Firestore initialized")
 
     // Print the current user to debug authentication issues
     onAuthStateChanged(auth, (user) => {
@@ -65,6 +84,7 @@ if (typeof window !== "undefined") {
     console.log("Firebase initialized successfully with project:", firebaseConfig.projectId)
   } catch (error) {
     console.error("Error initializing Firebase:", error)
+    throw error // Re-throw the error to handle it in the calling code
   }
 }
 
