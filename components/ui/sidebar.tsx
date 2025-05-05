@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
-import { Sheet, SheetContent } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   Tooltip,
@@ -198,15 +198,17 @@ const Sidebar = React.forwardRef<
           <SheetContent
             data-sidebar="sidebar"
             data-mobile="true"
-            className="w-[--sidebar-width] bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
+            className="w-[--sidebar-width] bg-background p-0 text-sidebar-foreground [&>button]:hidden border border-sidebar-border shadow-lg"
             style={
               {
                 "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
+                "--tw-bg-opacity": "1",
               } as React.CSSProperties
             }
             side={side}
           >
-            <div className="flex h-full w-full flex-col">{children}</div>
+            <SheetTitle className="sr-only">Sidebar Navigation</SheetTitle>
+            <div className="flex h-full w-full flex-col bg-background">{children}</div>
           </SheetContent>
         </Sheet>
       )

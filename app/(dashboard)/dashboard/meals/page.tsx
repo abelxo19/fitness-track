@@ -32,7 +32,7 @@ export default function LogMealsPage() {
     notes: "",
   })
 
-  const handleChange = (field: string, value: any) => {
+  const handleChange = (field: string, value: string | number) => {
     setMealData((prev) => ({ ...prev, [field]: value }))
   }
 
@@ -90,7 +90,7 @@ export default function LogMealsPage() {
         <p className="text-muted-foreground">Track your nutrition by logging your meals and snacks.</p>
       </div>
 
-      <Card className="max-w-2xl">
+      <Card className="w-full">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Utensils className="h-5 w-5" />
@@ -112,7 +112,7 @@ export default function LogMealsPage() {
             </Alert>
           )}
 
-          <Tabs defaultValue="breakfast" onValueChange={(value) => handleChange("type", value)} value={mealData.type}>
+          <Tabs defaultValue="breakfast" onValueChange={(value) => handleChange("type", value as string)} value={mealData.type}>
             <TabsList className="grid grid-cols-4 mb-4">
               <TabsTrigger value="breakfast">Breakfast</TabsTrigger>
               <TabsTrigger value="lunch">Lunch</TabsTrigger>

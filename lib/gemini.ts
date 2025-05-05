@@ -26,7 +26,7 @@ export type WorkoutDay = {
   day: string;
   exercises: Array<{
     name: string;
-    sets: number;
+    sets: string;
     reps: string;
     notes?: string;
   }>;
@@ -72,6 +72,52 @@ const genAI = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! 
 
 export async function generateFitnessPlan(profile: UserProfile): Promise<FitnessPlan> {
   try {
+    // Generate a random training style to introduce variety
+    const trainingStyles = [
+      "traditional bodybuilding", 
+      "functional training", 
+      "circuit training", 
+      "HIIT", 
+      "strength training", 
+      "endurance focused", 
+      "athletic performance",
+      "mobility and flexibility",
+      "power and explosive movements",
+      "compound exercise focused",
+      "mind-muscle connection focused"
+    ];
+    
+    // Generate a random nutrition approach for variety
+    const nutritionApproaches = [
+      "balanced macronutrient distribution",
+      "carb cycling",
+      "higher protein focus",
+      "whole food based",
+      "Mediterranean-inspired",
+      "nutrient timing focused",
+      "plant-centered",
+      "paleo-inspired",
+      "intermittent fasting compatible",
+      "anti-inflammatory focused"
+    ];
+    
+    // Generate random meal timing approach
+    const mealTimings = [
+      "3 meals with 2 snacks",
+      "5 smaller meals throughout the day",
+      "intermittent fasting with 8-hour eating window",
+      "3 larger meals with no snacks",
+      "pre and post workout nutrition focus"
+    ];
+    
+    // Pick random elements
+    const randomStyle = trainingStyles[Math.floor(Math.random() * trainingStyles.length)];
+    const randomNutrition = nutritionApproaches[Math.floor(Math.random() * nutritionApproaches.length)];
+    const randomMealTiming = mealTimings[Math.floor(Math.random() * mealTimings.length)];
+    
+    // Create a unique timestamp identifier to ensure variety
+    const uniqueId = Date.now().toString().slice(-5);
+    
     const prompt = `Generate a comprehensive fitness and nutrition plan for a user with the following profile:
     Age: ${profile.age}
     Gender: ${profile.gender}
@@ -83,6 +129,15 @@ export async function generateFitnessPlan(profile: UserProfile): Promise<Fitness
     Medical Conditions: ${profile.medicalConditions || 'None'}
     Available Equipment: ${profile.availableEquipment || 'Basic home equipment'}
     Time Commitment: ${profile.timeCommitment || '30-60 minutes per day'}
+
+    IMPORTANT INSTRUCTIONS FOR VARIETY (Generation ID: ${uniqueId}):
+    1. Use a ${randomStyle} approach for the workout design
+    2. Create a nutrition plan based on ${randomNutrition} principles
+    3. Structure meal timing as ${randomMealTiming}
+    4. Be creative and include unique exercises and meal suggestions
+    5. DO NOT recycle common templates - make this plan truly personalized
+    6. Use very specific exercises rather than generic ones
+    7. Include specific food suggestions with quantities
 
     IMPORTANT: You must return a valid JSON object with the following structure. Do not include any markdown, text, or explanations outside the JSON:
     {
@@ -143,7 +198,10 @@ export async function generateFitnessPlan(profile: UserProfile): Promise<Fitness
 
     const response = await genAI.models.generateContent({
       model: "gemini-2.0-flash",
-      contents: prompt
+      contents: prompt,
+      temperature: 0.8,  // Increase temperature for more randomness
+      topK: 40,    // Higher topK allows for more variety
+      topP: 0.95   // Higher topP increases randomness
     })
     
     if (!response.text) {
