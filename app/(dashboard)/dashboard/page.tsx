@@ -197,89 +197,89 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col space-y-2">
+    <div className="w-full space-y-6">
+      <div className="flex flex-col space-y-2 w-full">
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
         <p className="text-muted-foreground">
           Welcome back{profile?.name ? `, ${profile.name}` : ""}! Here's your fitness summary.
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 w-full">
+        <Card className="w-full">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 w-full">
             <CardTitle className="text-sm font-medium">Calories Burned</CardTitle>
             <Flame className="h-4 w-4 text-orange-500" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="w-full">
             <div className="text-2xl font-bold">{caloriesBurned}</div>
             <p className="text-xs text-muted-foreground">Today's workout calories</p>
-            <Progress className="mt-2" value={Math.min(caloriesBurned / 5, 100)} />
+            <Progress className="mt-2 w-full" value={Math.min(caloriesBurned / 5, 100)} />
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <Card className="w-full">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 w-full">
             <CardTitle className="text-sm font-medium">Calories Consumed</CardTitle>
             <Utensils className="h-4 w-4 text-green-500" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="w-full">
             <div className="text-2xl font-bold">{caloriesConsumed}</div>
             <p className="text-xs text-muted-foreground">Today's meal calories</p>
-            <Progress className="mt-2" value={Math.min(caloriesConsumed / 20, 100)} />
+            <Progress className="mt-2 w-full" value={Math.min(caloriesConsumed / 20, 100)} />
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <Card className="w-full">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 w-full">
             <CardTitle className="text-sm font-medium">Workout Time</CardTitle>
             <Dumbbell className="h-4 w-4 text-blue-500" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="w-full">
             <div className="text-2xl font-bold">{workoutMinutes} min</div>
             <p className="text-xs text-muted-foreground">Today's workout duration</p>
-            <Progress className="mt-2" value={Math.min(workoutMinutes / 60, 100)} />
+            <Progress className="mt-2 w-full" value={Math.min(workoutMinutes / 60, 100)} />
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <Card className="w-full">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 w-full">
             <CardTitle className="text-sm font-medium">Activity Level</CardTitle>
             <Activity className="h-4 w-4 text-purple-500" />
           </CardHeader>
-          <CardContent>
+          <CardContent className="w-full">
             <div className="text-2xl font-bold">{todaysWorkouts.length > 0 ? "Active" : "Rest Day"}</div>
             <p className="text-xs text-muted-foreground">Based on today's activities</p>
-            <Progress className="mt-2" value={todaysWorkouts.length > 0 ? 75 : 25} />
+            <Progress className="mt-2 w-full" value={todaysWorkouts.length > 0 ? 75 : 25} />
           </CardContent>
         </Card>
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex justify-end w-full">
         <Button variant="outline" size="sm" className="flex items-center gap-2" onClick={fetchData} disabled={loading}>
           Refresh Data
           {loading ? <RefreshCcw className="h-3 w-3 animate-spin" /> : <RefreshCcw className="h-3 w-3" />}
         </Button>
       </div>
 
-      <Tabs defaultValue="workouts">
-        <TabsList>
-          <TabsTrigger value="workouts">Recent Workouts</TabsTrigger>
-          <TabsTrigger value="meals">Recent Meals</TabsTrigger>
+      <Tabs defaultValue="workouts" className="w-full">
+        <TabsList className="w-full">
+          <TabsTrigger value="workouts" className="flex-1">Recent Workouts</TabsTrigger>
+          <TabsTrigger value="meals" className="flex-1">Recent Meals</TabsTrigger>
         </TabsList>
-        <TabsContent value="workouts" className="space-y-4">
+        <TabsContent value="workouts" className="space-y-4 w-full">
           {workouts.length > 0 ? (
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 w-full">
               {workouts.map((workout, index) => (
-                <Card key={index}>
-                  <CardHeader>
+                <Card key={index} className="w-full">
+                  <CardHeader className="w-full">
                     <CardTitle className="capitalize">{workout.type}</CardTitle>
                     <CardDescription>
                       {workout.createdAt ? formatDate(workout.createdAt) : "Unknown date"}
                     </CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 gap-4">
+                  <CardContent className="w-full">
+                    <div className="grid grid-cols-2 gap-4 w-full">
                       <div>
                         <p className="text-sm font-medium">Duration</p>
                         <p>{workout.duration} minutes</p>

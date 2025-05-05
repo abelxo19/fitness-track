@@ -1,0 +1,36 @@
+runtime: nodejs18
+env: standard
+instance_class: F1
+
+automatic_scaling:
+  target_cpu_utilization: 0.65
+  min_instances: 1
+  max_instances: 10
+  min_idle_instances: 1
+  max_idle_instances: 2
+  min_pending_latency: 30ms
+  max_pending_latency: automatic
+  max_concurrent_requests: 50
+
+env_variables:
+  NODE_ENV: "production"
+  NEXT_PUBLIC_GEMINI_API_KEY=AIzaSyBXJUcg6Fz182Z2xHDEJ2B_f5wcvqVUJRo
+  NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyDUvrKo19L47o9VZQzCyYLaF_0-BZWgQ8o
+  NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=fitness-tracker-458718.firebaseapp.com
+  NEXT_PUBLIC_FIREBASE_PROJECT_ID=fitness-tracker-458718
+  NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=fitness-tracker-458718.firebasestorage.app
+  NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=525096617878
+  NEXT_PUBLIC_FIREBASE_APP_ID=1:525096617878:web:c1f6ab6fe1eb0313527fb7
+  NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-6KFBNYRS8Y
+
+
+handlers:
+  - url: /.*
+    script: auto
+    secure: always
+
+inbound_services:
+  - warmup
+
+includes:
+  - env_variables.yaml 

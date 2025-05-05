@@ -110,7 +110,7 @@ export default function DashboardLayout({
           </SidebarFooter>
         </Sidebar>
         <main className="flex-1 overflow-y-auto bg-gray-50 p-4 md:p-6">
-          <div className="mx-auto max-w-7xl">
+          <div className="w-full">
             <div className="flex items-center md:hidden">
               <SidebarTrigger />
             </div>
