@@ -13,44 +13,51 @@ env:
     availability:
       - BUILD
       - RUNTIME
+
   - variable: NEXT_PUBLIC_GEMINI_API_KEY
-    secret: gemini-api-key
+    secret: NEXT_PUBLIC_GEMINI_API_KEY
+    availability:
+      - BUILD
+      - RUNTIME
 
   - variable: NEXT_PUBLIC_FIREBASE_API_KEY
-    secret: firebase-api-key
+    secret: NEXT_PUBLIC_FIREBASE_API_KEY
+    availability:
+      - BUILD
+      - RUNTIME
 
   - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
-    value: "fitness-tracker-458718.firebaseapp.com"
+    secret: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
     availability:
       - BUILD
       - RUNTIME
 
   - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
-    value: "fitness-tracker-458718"
+    secret: NEXT_PUBLIC_FIREBASE_PROJECT_ID
     availability:
       - BUILD
       - RUNTIME
 
   - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
-    value: "fitness-tracker-458718.firebasestorage.app"
+    secret: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
     availability:
       - BUILD
       - RUNTIME
 
   - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
-    value: "525096617878"
+    secret: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
     availability:
       - BUILD
       - RUNTIME
 
   - variable: NEXT_PUBLIC_FIREBASE_APP_ID
-    value: "1:525096617878:web:c1f6ab6fe1eb0313527fb7"
+    secret: NEXT_PUBLIC_FIREBASE_APP_ID
     availability:
       - BUILD
       - RUNTIME
 
   - variable: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
-    value: "G-6KFBNYRS8Y"
+    secret: NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
     availability:
       - BUILD
       - RUNTIME
