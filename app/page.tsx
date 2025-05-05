@@ -1,9 +1,11 @@
+"use client";
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dumbbell, Utensils, Calendar, Activity, ChevronRight, ArrowRight } from "lucide-react"
 import { LandingNav } from "../components/landing-nav"
+import { motion } from "framer-motion"
 
 export default function LandingPage() {
   return (
@@ -41,13 +43,13 @@ export default function LandingPage() {
               </div>
             </div>
             <div className="flex items-center justify-center">
-              <div className="relative w-full max-w-[600px] aspect-[4/3] overflow-hidden rounded-xl">
+              <div className="relative w-full max-w-[500px] aspect-[4/3] overflow-hidden rounded-xl my-10">
                 <Image
-                  src="/images/fitness-dashboard.png"
+                  src="hero-img.jpg"
                   alt="Fitness tracking dashboard preview"
                   fill
                   className="object-cover"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 600px"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 40vw, 600px"
                   priority
                 />
                 <div className="absolute inset-0 bg-gradient-to-tr from-background/80 via-transparent to-transparent" />
@@ -90,48 +92,86 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 md:grid-cols-3 lg:gap-8 pt-8 md:pt-12">
-            <Card className="flex flex-col items-start">
-              <CardHeader>
-                <div className="p-2 rounded-lg bg-blue-500/10 mb-2">
-                  <Dumbbell className="h-6 w-6 text-blue-500" />
-                </div>
-                <CardTitle>Workout Tracking</CardTitle>
-                <CardDescription>Log your workouts and track your progress</CardDescription>
-              </CardHeader>
-              <CardContent className="flex-1">
-                <p className="text-sm text-muted-foreground">
-                  Record different types of workouts, track duration, intensity, and calories burned.
-                </p>
-              </CardContent>
-            </Card>
-            <Card className="flex flex-col items-start">
-              <CardHeader>
-                <div className="p-2 rounded-lg bg-green-500/10 mb-2">
-                  <Utensils className="h-6 w-6 text-green-500" />
-                </div>
-                <CardTitle>Nutrition Tracking</CardTitle>
-                <CardDescription>Monitor your daily nutrition intake</CardDescription>
-              </CardHeader>
-              <CardContent className="flex-1">
-                <p className="text-sm text-muted-foreground">
-                  Track meals, calories, and macronutrients to maintain a balanced diet.
-                </p>
-              </CardContent>
-            </Card>
-            <Card className="flex flex-col items-start">
-              <CardHeader>
-                <div className="p-2 rounded-lg bg-purple-500/10 mb-2">
-                  <Calendar className="h-6 w-6 text-purple-500" />
-                </div>
-                <CardTitle>AI-Powered Plans</CardTitle>
-                <CardDescription>Get personalized fitness plans</CardDescription>
-              </CardHeader>
-              <CardContent className="flex-1">
-                <p className="text-sm text-muted-foreground">
-                  Receive customized workout and nutrition plans based on your goals and preferences.
-                </p>
-              </CardContent>
-            </Card>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5 }}
+              whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
+            >
+              <Card className="flex flex-col items-start h-full">
+                <CardHeader>
+                  <motion.div 
+                    className="p-2 rounded-lg bg-blue-500/10 mb-2"
+                    whileHover={{ scale: 1.1, rotate: 5 }}
+                    transition={{ type: "spring", stiffness: 300 }}
+                  >
+                    <Dumbbell className="h-6 w-6 text-blue-500" />
+                  </motion.div>
+                  <CardTitle>Workout Tracking</CardTitle>
+                  <CardDescription>Log your workouts and track your progress</CardDescription>
+                </CardHeader>
+                <CardContent className="flex-1">
+                  <p className="text-sm text-muted-foreground">
+                    Record different types of workouts, track duration, intensity, and calories burned.
+                  </p>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
+            >
+              <Card className="flex flex-col items-start h-full">
+                <CardHeader>
+                  <motion.div 
+                    className="p-2 rounded-lg bg-green-500/10 mb-2"
+                    whileHover={{ scale: 1.1, rotate: 5 }}
+                    transition={{ type: "spring", stiffness: 300 }}
+                  >
+                    <Utensils className="h-6 w-6 text-green-500" />
+                  </motion.div>
+                  <CardTitle>Nutrition Tracking</CardTitle>
+                  <CardDescription>Monitor your daily nutrition intake</CardDescription>
+                </CardHeader>
+                <CardContent className="flex-1">
+                  <p className="text-sm text-muted-foreground">
+                    Track meals, calories, and macronutrients to maintain a balanced diet.
+                  </p>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+              whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
+            >
+              <Card className="flex flex-col items-start h-full">
+                <CardHeader>
+                  <motion.div 
+                    className="p-2 rounded-lg bg-purple-500/10 mb-2"
+                    whileHover={{ scale: 1.1, rotate: 5 }}
+                    transition={{ type: "spring", stiffness: 300 }}
+                  >
+                    <Calendar className="h-6 w-6 text-purple-500" />
+                  </motion.div>
+                  <CardTitle>AI-Powered Plans</CardTitle>
+                  <CardDescription>Get personalized fitness plans</CardDescription>
+                </CardHeader>
+                <CardContent className="flex-1">
+                  <p className="text-sm text-muted-foreground">
+                    Receive customized workout and nutrition plans based on your goals and preferences.
+                  </p>
+                </CardContent>
+              </Card>
+            </motion.div>
           </div>
         </div>
       </section>
