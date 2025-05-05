@@ -46,6 +46,22 @@ const cardVariant = {
   }
 };
 
+// Add this interface near the top of the file with other imports
+interface UserProfile {
+  id: string;
+  userId?: string;
+  name?: string;
+  age?: number;
+  gender?: string;
+  weight?: number;
+  height?: number;
+  activityLevel?: string;
+  fitnessGoal?: string;
+  dietaryRestrictions?: string[];
+  createdAt?: any;
+  updatedAt?: any;
+}
+
 export default function SettingsPage() {
   const { user } = useAuth()
   const [loading, setLoading] = useState(true)
@@ -70,9 +86,10 @@ export default function SettingsPage() {
       if (user) {
         try {
           console.log("Fetching profile for user:", user.uid)
-          const profile = await getUserProfile(user.uid)
-
-          if (profile) {
+          const profileData = await getUserProfile(user.uid)
+          
+          if (profileData) {
+            const profile = profileData as UserProfile;
             console.log("Profile found:", profile)
             setProfileId(profile.id)
             setProfileData({

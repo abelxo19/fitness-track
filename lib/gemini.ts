@@ -199,9 +199,10 @@ export async function generateFitnessPlan(profile: UserProfile): Promise<Fitness
     const response = await genAI.models.generateContent({
       model: "gemini-2.0-flash",
       contents: prompt,
-      temperature: 0.8,  // Increase temperature for more randomness
-      topK: 40,    // Higher topK allows for more variety
-      topP: 0.95   // Higher topP increases randomness
+      // Remove unsupported parameters for this version of the API
+      // temperature: 0.8,
+      // topK: 40,
+      // topP: 0.95
     })
     
     if (!response.text) {
