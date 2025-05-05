@@ -205,38 +205,6 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      {error && (
-        <Alert variant="destructive" className="mb-4">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription className="flex flex-col gap-2">
-            <div>{error}</div>
-            <div className="text-sm">
-              This is likely due to Firestore security rules. Please update your rules in the Firebase Console.
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-fit mt-2 flex items-center gap-2"
-              onClick={testPermissions}
-              disabled={testingPermissions}
-            >
-              {testingPermissions ? "Testing..." : "Test Permissions"}
-              {testingPermissions && <RefreshCcw className="h-3 w-3 animate-spin" />}
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {permissionStatus && (
-        <Alert variant={permissionStatus.success ? "default" : "destructive"} className="mb-4">
-          <AlertDescription>
-            {permissionStatus.success
-              ? "Permissions test passed! You should be able to read/write data now."
-              : `Permissions test failed: ${permissionStatus.message}`}
-          </AlertDescription>
-        </Alert>
-      )}
-
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

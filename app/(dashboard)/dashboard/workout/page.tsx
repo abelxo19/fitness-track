@@ -251,9 +251,6 @@ export default function LogWorkoutPage() {
           <Button variant="outline" onClick={() => router.push("/dashboard")}>
             Cancel
           </Button>
-          <Button variant="outline" onClick={testPermissions} disabled={isLoading}>
-            Test Permissions
-          </Button>
           <Button onClick={handleSubmit} disabled={isLoading || !workoutData.type}>
             {isLoading ? "Saving..." : "Save Workout"}
           </Button>
