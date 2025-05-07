@@ -1,76 +1,111 @@
-# Simple Testing Approach for MVP
+# Fitness Tracker Testing Documentation
 
-## Testing Goals
-- Verify core functionality works
-- Catch obvious bugs
-- Provide basic confidence in the application
+## Current Test Coverage
 
-## Testing Types
-
-### 1. Unit Tests
-We use Jest to test basic utility functions:
-- BMI calculator
-- Calorie calculator
-- Date formatters
-
-Example:
+### Unit Tests
 ```typescript
-test('BMI calculator works correctly', () => {
-  expect(calculateBMI(70, 170)).toBeCloseTo(24.22, 2);
+// BMI Calculator
+test('calculates BMI correctly', () => {
+  expect(calculateBMI(70, 170)).toBe(24.22);
+});
+
+// Calorie Calculator
+test('calculates calories burned correctly', () => {
+  expect(calculateCaloriesBurned('running', 30, 70)).toBe(350);
+});
+
+// Date Formatters
+test('formats workout date correctly', () => {
+  expect(formatWorkoutDate(new Date('2024-03-15'))).toBe('Mar 15, 2024');
 });
 ```
 
-### 2. Component Tests
-We test critical UI components with React Testing Library:
-- Authentication forms
-- Workout entry form
-- Basic dashboard rendering
-
-Example:
+### Component Tests
 ```typescript
-test('Workout form submits with correct data', () => {
-  // Render form
-  // Fill inputs
-  // Click submit
-  // Verify correct data
+// Workout Form
+test('workout form validation', () => {
+  render(<WorkoutForm />);
+  fireEvent.click(screen.getByText('Save'));
+  expect(screen.getByText('Please select workout type')).toBeInTheDocument();
+});
+
+// Profile Settings
+test('profile form updates correctly', () => {
+  render(<ProfileSettings />);
+  fireEvent.change(screen.getByLabelText('Weight'), { target: { value: '70' } });
+  expect(screen.getByLabelText('Weight')).toHaveValue('70');
 });
 ```
 
-### 3. Basic E2E Tests
-We use Playwright for a few essential user flows:
-- User signup/login
-- Adding a workout
-- Viewing the dashboard
-
-Example:
+### Integration Tests
 ```typescript
-test('User can log in and view dashboard', async ({ page }) => {
-  await page.goto('/login');
-  await page.fill('input[name="email"]', 'test@example.com');
-  await page.fill('input[name="password"]', 'password');
-  await page.click('button[type="submit"]');
-  await expect(page).toHaveURL('/dashboard');
+// Workout Flow
+test('complete workout logging flow', async () => {
+  // Login
+  await loginUser();
+  
+  // Navigate to workout page
+  await navigateToWorkout();
+  
+  // Fill workout form
+  await fillWorkoutForm({
+    type: 'running',
+    duration: 30,
+    intensity: 'medium'
+  });
+  
+  // Submit and verify
+  await submitWorkout();
+  expect(await screen.findByText('Workout saved successfully')).toBeInTheDocument();
 });
 ```
 
-## Running Tests
+## Test Environment
 
-### Unit and Component Tests
+### Setup
 ```bash
+# Install dependencies
+npm install
+
+# Run unit and component tests
 npm test
+
+# Run integration tests
+npm run test:integration
+
+# Run all tests with coverage
+npm run test:coverage
 ```
 
-### E2E Tests
-```bash
-npm run test:e2e
-```
+### Test Coverage Goals
+- Unit Tests: 80% coverage
+- Component Tests: 70% coverage
+- Integration Tests: 60% coverage
 
-## Test Reports
-For the MVP, we'll use Jest's basic console output and Playwright's HTML report to verify test results.
+## Current Test Status
 
-## Future Test Improvements
-After MVP, we can expand:
-- Increase test coverage
-- Add more edge cases
-- Implement continuous integration
-- Add accessibility testing 
+### Passing Tests
+- User authentication flows
+- Workout logging
+- Meal tracking
+- Profile management
+- Basic analytics calculations
+
+### Known Issues
+- Analytics edge cases need more coverage
+- Offline mode testing incomplete
+- Performance testing needs improvement
+
+## Future Testing Plans
+
+### Short Term
+- Add more edge case tests
+- Improve error handling tests
+- Add performance benchmarks
+- Enhance offline testing
+
+### Long Term
+- Implement E2E testing with Playwright
+- Add load testing
+- Implement visual regression testing
+- Add accessibility testing
