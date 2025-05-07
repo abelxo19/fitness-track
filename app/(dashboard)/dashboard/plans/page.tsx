@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { motion } from "framer-motion"
 
 // Add interfaces for plan content
 interface PlanContent {
@@ -23,147 +24,231 @@ interface PlanContent {
   }
 }
 
+// Add animation variants
+const fadeIn = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.5 } }
+};
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const cardVariant = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { 
+      type: "spring", 
+      stiffness: 100, 
+      damping: 15 
+    }
+  }
+};
+
 // Create a separate component for the plan content
 function PlanContent({ planData }: { planData: FitnessPlan }) {
   const [selectedDay, setSelectedDay] = useState("1");
+  const dayIndex = parseInt(selectedDay) - 1;
+  const currentDay = planData.workoutPlan.weeklySplit[dayIndex];
+  const dayMeals = planData.nutritionPlan.mealPlans[dayIndex]?.meals || [];
+
+  // For progress indicator in day selector
+  const totalDays = planData.workoutPlan.weeklySplit.length;
+  const progressPercent = ((dayIndex + 1) / totalDays) * 100;
 
   return (
-    <div className="space-y-6">
-      {/* Initial Assessment */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Activity className="h-5 w-5" />
-            Initial Assessment
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">{planData.initialAssessment}</p>
-        </CardContent>
-      </Card>
+    <motion.div 
+      className="space-y-8"
+      initial="hidden"
+      animate="visible"
+      variants={staggerContainer}
+    >
+      {/* Initial Assessment - Simplified with better spacing */}
+      <motion.div variants={fadeIn} className="rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 p-6">
+        <h3 className="mb-3 text-xl font-semibold flex items-center gap-2">
+          <Activity className="h-5 w-5 text-primary" />
+          Your Fitness Assessment
+        </h3>
+        <p className="text-muted-foreground leading-relaxed">{planData.initialAssessment}</p>
+      </motion.div>
 
-      {/* Daily View Selector */}
-      <div className="flex items-center gap-4">
-        <Select value={selectedDay} onValueChange={setSelectedDay}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Select day" />
-          </SelectTrigger>
-          <SelectContent>
+      {/* Day Selection - More intuitive and visual */}
+      <motion.div variants={fadeIn} className="mb-2">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-lg font-medium">Daily Schedule</h3>
+          <p className="text-sm text-muted-foreground">Day {parseInt(selectedDay)} of {totalDays}</p>
+        </div>
+        
+        {/* Day progress bar */}
+        <div className="h-2 w-full bg-muted rounded-full mb-4 overflow-hidden">
+          <div 
+            className="h-full bg-primary transition-all duration-300" 
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
+        
+        {/* Day selector buttons */}
+        <div className="flex gap-2 overflow-x-auto pb-2 snap-x">
             {planData.workoutPlan.weeklySplit.map((day, index) => (
-              <SelectItem key={index} value={String(index + 1)}>
+            <button
+              key={index}
+              onClick={() => setSelectedDay(String(index + 1))}
+              className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap snap-start flex-shrink-0
+                ${selectedDay === String(index + 1)
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "bg-background border hover:bg-muted transition-colors"
+                }`}
+            >
                 {day.day}
-              </SelectItem>
+            </button>
             ))}
-          </SelectContent>
-        </Select>
       </div>
+      </motion.div>
 
-      {/* Selected Day's Plan */}
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Workout Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+      {/* Main Content Area - Clean 2-column layout */}
+      <motion.div variants={fadeIn} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Workout Column */}
+        <motion.div variants={cardVariant} className="border-t-4 border-t-blue-500 shadow-sm hover:shadow transition-shadow">
+          <CardHeader className="pb-3">
+            <div className="flex justify-between items-start">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
               <Dumbbell className="h-5 w-5" />
-              Today's Workout
+                  Workout Plan
             </CardTitle>
-            <CardDescription>
-              {planData.workoutPlan.weeklySplit[parseInt(selectedDay) - 1].focus}
-            </CardDescription>
+                <CardDescription className="mt-1">{currentDay.focus}</CardDescription>
+              </div>
+              <Badge variant="outline" className="bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-300 border-blue-200">
+                {currentDay.day}
+              </Badge>
+            </div>
           </CardHeader>
           <CardContent>
-            <ScrollArea className="h-[400px] pr-4">
-              <div className="space-y-4">
-                {planData.workoutPlan.weeklySplit[parseInt(selectedDay) - 1].exercises.map((exercise, index) => (
-                  <div key={index} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-medium">{exercise.name}</h4>
-                      <div className="flex gap-2">
-                        <Badge variant="outline">{exercise.sets}</Badge>
-                        <Badge variant="outline">{exercise.reps}</Badge>
-                      </div>
+            <div className="space-y-5">
+              {currentDay.exercises.map((exercise, index) => (
+                <div 
+                  key={index} 
+                  className="relative p-4 rounded-lg bg-blue-50 dark:bg-blue-950/20 hover:bg-blue-100 dark:hover:bg-blue-950/30 transition-colors"
+                >
+                  <div className="flex items-start justify-between">
+                    <h4 className="font-medium text-lg text-blue-900 dark:text-blue-300">{exercise.name}</h4>
+                    <div className="flex gap-1">
+                      <Badge className="bg-white dark:bg-blue-900 text-blue-700">{exercise.sets}</Badge>
+                      <Badge className="bg-white dark:bg-blue-900 text-blue-700">{exercise.reps}</Badge>
                     </div>
-                    {exercise.notes && (
-                      <p className="text-sm text-muted-foreground">{exercise.notes}</p>
-                    )}
+                  </div>
+                  {exercise.notes && (
+                    <p className="mt-2 text-sm text-blue-700 dark:text-blue-400">{exercise.notes}</p>
+                  )}
                   </div>
                 ))}
               </div>
-            </ScrollArea>
           </CardContent>
-        </Card>
+        </motion.div>
 
-        {/* Nutrition Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+        {/* Nutrition Column */}
+        <motion.div variants={cardVariant} className="border-t-4 border-t-green-500 shadow-sm hover:shadow transition-shadow">
+          <CardHeader className="pb-3">
+            <div className="flex justify-between items-start">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-green-600 dark:text-green-400">
               <Utensils className="h-5 w-5" />
-              Today's Meals
+                  Nutrition Plan
             </CardTitle>
-            <CardDescription>
-              Daily Target: {planData.nutritionPlan.dailyCalories}
-            </CardDescription>
+                <CardDescription className="mt-1">Daily Target: {planData.nutritionPlan.dailyCalories}</CardDescription>
+              </div>
+              <Badge variant="outline" className="bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-300 border-green-200">
+                {currentDay.day}
+              </Badge>
+            </div>
           </CardHeader>
           <CardContent>
-            <ScrollArea className="h-[400px] pr-4">
-              <div className="space-y-6">
-                {/* Macros Summary */}
-                <div className="grid grid-cols-3 gap-4 p-4 bg-muted/30 rounded-lg">
-                  <div className="text-center">
-                    <p className="text-sm font-medium">Protein</p>
-                    <p className="text-lg font-bold">{planData.nutritionPlan.macros.protein}</p>
+            {/* Macros Summary - Visually balanced with progress bars */}
+            <div className="p-4 rounded-lg bg-green-50 dark:bg-green-950/20 mb-5">
+              <h4 className="font-medium text-green-800 dark:text-green-300 mb-3">Macronutrients</h4>
+              
+              <div className="space-y-3">
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span>Protein</span>
+                    <span className="font-medium">{planData.nutritionPlan.macros.protein}</span>
                   </div>
-                  <div className="text-center">
-                    <p className="text-sm font-medium">Carbs</p>
-                    <p className="text-lg font-bold">{planData.nutritionPlan.macros.carbs}</p>
+                  <div className="h-2 w-full bg-white dark:bg-black/20 rounded-full overflow-hidden">
+                    <div className="h-full bg-blue-500" style={{ width: '60%' }} />
                   </div>
-                  <div className="text-center">
-                    <p className="text-sm font-medium">Fats</p>
-                    <p className="text-lg font-bold">{planData.nutritionPlan.macros.fats}</p>
+                </div>
+                
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span>Carbs</span>
+                    <span className="font-medium">{planData.nutritionPlan.macros.carbs}</span>
+                  </div>
+                  <div className="h-2 w-full bg-white dark:bg-black/20 rounded-full overflow-hidden">
+                    <div className="h-full bg-green-500" style={{ width: '45%' }} />
                   </div>
                 </div>
 
-                {/* Meals */}
-                <div className="space-y-4">
-                  {planData.nutritionPlan.mealPlans[parseInt(selectedDay) - 1]?.meals.map((meal, index) => (
-                    <div key={index} className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-medium">{meal.name}</h4>
-                        <Badge variant="secondary">{meal.calories}</Badge>
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span>Fats</span>
+                    <span className="font-medium">{planData.nutritionPlan.macros.fats}</span>
                       </div>
-                      <p className="text-sm text-muted-foreground">{meal.description}</p>
-                      <Badge variant="outline">{meal.macros}</Badge>
+                  <div className="h-2 w-full bg-white dark:bg-black/20 rounded-full overflow-hidden">
+                    <div className="h-full bg-amber-500" style={{ width: '25%' }} />
                     </div>
-                  ))}
                 </div>
               </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
-      </div>
+            </div>
 
-      {/* Tips Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5" />
+            {/* Meals */}
+            <div className="space-y-4">
+              {dayMeals.map((meal, index) => (
+                <div key={index} className="p-4 rounded-lg bg-green-50 dark:bg-green-950/20 hover:bg-green-100 dark:hover:bg-green-950/30 transition-colors">
+                  <div className="flex items-start justify-between mb-2">
+                    <h4 className="font-medium text-lg text-green-900 dark:text-green-300">{meal.name}</h4>
+                    <Badge className="bg-white dark:bg-green-900 text-green-700">{meal.calories}</Badge>
+                  </div>
+                  <p className="text-sm text-green-700 dark:text-green-400 mb-2">{meal.description}</p>
+                  <Badge variant="outline" className="text-xs bg-white/60 dark:bg-black/20 text-green-800 border-green-200">
+                    {meal.macros}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </motion.div>
+      </motion.div>
+
+      {/* Tips Section - More engaging and visually separated */}
+      <motion.div variants={fadeIn} className="border-t-4 border-t-amber-500 shadow-sm">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+            <Flame className="h-5 w-5" />
             Tips For Success
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <ScrollArea className="h-[200px] pr-4">
-            <ul className="space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {planData.dietaryTips.map((tip, index) => (
-                <li key={index} className="flex items-start gap-2">
-                  <ArrowRight className="h-4 w-4 mt-1 flex-shrink-0 text-primary" />
-                  <span>{tip}</span>
-                </li>
-              ))}
-            </ul>
-          </ScrollArea>
+              <div key={index} className="flex items-start gap-3 bg-amber-50 dark:bg-amber-950/20 p-4 rounded-lg">
+                <div className="h-6 w-6 rounded-full bg-amber-200 dark:bg-amber-800 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <span className="text-amber-800 dark:text-amber-200 text-sm font-medium">{index + 1}</span>
+                </div>
+                <p className="text-amber-800 dark:text-amber-200 text-sm">{tip}</p>
+              </div>
+            ))}
+          </div>
         </CardContent>
-      </Card>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
@@ -271,101 +356,111 @@ export default function PersonalizedPlansPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="flex flex-col space-y-2">
-          <Skeleton className="h-8 w-64" />
+      <div className="max-w-7xl mx-auto space-y-8 px-4 py-6">
+        <div className="flex flex-col space-y-3">
+          <Skeleton className="h-10 w-64" />
           <Skeleton className="h-4 w-full max-w-md" />
         </div>
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-40" />
-            <Skeleton className="h-4 w-64" />
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-3/4" />
-            </div>
-          </CardContent>
-        </Card>
+        <Skeleton className="h-[500px] w-full rounded-xl" />
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Personalized Plans</h1>
-        <p className="text-muted-foreground">
-          Get customized workout and nutrition plans based on your profile and goals.
-        </p>
+    <div className="max-w-7xl mx-auto space-y-8 px-4 py-6">
+      {/* Enhanced Header with Background */}
+      <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white shadow-lg">
+        <div className="relative z-10">
+          <h1 className="text-3xl font-bold tracking-tight mb-2">Your Fitness Journey</h1>
+          <p className="text-blue-100 max-w-2xl">
+            Discover personalized workout and nutrition plans crafted specifically for your goals and preferences.
+          </p>
+        </div>
+        <div className="absolute right-0 bottom-0 opacity-20">
+          <Dumbbell className="h-32 w-32 text-white" />
+        </div>
       </div>
 
       {error && (
-        <Alert variant="destructive">
+        <Alert variant="destructive" className="animate-fadeIn">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
       {!plan ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Generate Your Plan
+        // No Plan View - More visually appealing with better information layout
+        <Card className="overflow-hidden shadow-lg border-none">
+          <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-b">
+            <CardTitle className="flex items-center gap-2 text-2xl">
+              <Calendar className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              Create Your Personalized Plan
             </CardTitle>
-            <CardDescription>Create a personalized fitness and nutrition plan based on your profile</CardDescription>
+            <CardDescription className="text-base">
+              Get a customized fitness and nutrition strategy based on your specific goals
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <p className="mb-4">
-              Our AI will generate a customized plan for you based on your profile information, fitness goals, and
-              preferences.
-            </p>
+          <CardContent className="p-6">
             {!profile ? (
-              <Alert>
-                <AlertDescription>
-                  Please complete your profile in the settings page before generating a plan.
-                </AlertDescription>
-              </Alert>
+              <div className="rounded-lg bg-amber-50 dark:bg-amber-950/20 p-5 flex gap-4 items-start border border-amber-200 dark:border-amber-800">
+                <div className="bg-amber-200 dark:bg-amber-800 rounded-full p-2 mt-1">
+                  <AlertCircle className="h-5 w-5 text-amber-700 dark:text-amber-300" />
+                </div>
+                <div>
+                  <h3 className="font-medium text-amber-800 dark:text-amber-300 mb-1">Profile Required</h3>
+                  <p className="text-amber-700 dark:text-amber-400">
+                    To generate a personalized plan, please complete your fitness profile in the settings page first.
+                  </p>
+                </div>
+              </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/30 rounded-lg p-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="font-medium">Age:</span>
-                    <span>{profile.age || "Not set"}</span>
+              <div className="space-y-6">
+                <div className="text-center pb-4">
+                  <h3 className="text-xl font-medium mb-3">Your Profile Summary</h3>
+                  <p className="text-muted-foreground mb-5">This information will be used to create your plan</p>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="bg-blue-50 dark:bg-blue-950/20 rounded-xl p-5 text-center">
+                    <div className="inline-flex items-center justify-center h-12 w-12 bg-blue-100 dark:bg-blue-900 rounded-full mb-3">
+                      <Calendar className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <h3 className="font-medium mb-1">Personal Info</h3>
+                    <div className="text-sm text-muted-foreground space-y-1">
+                      <p>Age: <span className="font-medium text-foreground">{profile.age || "Not set"}</span></p>
+                      <p>Gender: <span className="font-medium text-foreground capitalize">{profile.gender || "Not set"}</span></p>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="font-medium">Gender:</span>
-                    <span className="capitalize">{profile.gender || "Not set"}</span>
+                  
+                  <div className="bg-green-50 dark:bg-green-950/20 rounded-xl p-5 text-center">
+                    <div className="inline-flex items-center justify-center h-12 w-12 bg-green-100 dark:bg-green-900 rounded-full mb-3">
+                      <Activity className="h-6 w-6 text-green-600 dark:text-green-400" />
+                    </div>
+                    <h3 className="font-medium mb-1">Body Metrics</h3>
+                    <div className="text-sm text-muted-foreground space-y-1">
+                      <p>Height: <span className="font-medium text-foreground">{profile.height ? `${profile.height} cm` : "Not set"}</span></p>
+                      <p>Weight: <span className="font-medium text-foreground">{profile.weight ? `${profile.weight} kg` : "Not set"}</span></p>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="font-medium">Weight:</span>
-                    <span>{profile.weight ? `${profile.weight} kg` : "Not set"}</span>
+                  
+                  <div className="bg-purple-50 dark:bg-purple-950/20 rounded-xl p-5 text-center">
+                    <div className="inline-flex items-center justify-center h-12 w-12 bg-purple-100 dark:bg-purple-900 rounded-full mb-3">
+                      <Flame className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <h3 className="font-medium mb-1">Fitness Goals</h3>
+                    <div className="text-sm text-muted-foreground space-y-1">
+                      <p>Activity: <span className="font-medium text-foreground capitalize">{profile.activityLevel || "Not set"}</span></p>
+                      <p>Goal: <span className="font-medium text-foreground capitalize">{profile.fitnessGoal?.replace(/-/g, " ") || "Not set"}</span></p>
+                    </div>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="font-medium">Height:</span>
-                    <span>{profile.height ? `${profile.height} cm` : "Not set"}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="font-medium">Activity Level:</span>
-                    <span className="capitalize">{profile.activityLevel || "Not set"}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="font-medium">Fitness Goal:</span>
-                    <span className="capitalize">{profile.fitnessGoal?.replace(/-/g, " ") || "Not set"}</span>
-                  </div>
-                </div>
+                
                 {profile.dietaryRestrictions && profile.dietaryRestrictions.length > 0 && (
-                  <div className="col-span-2">
-                    <span className="font-medium">Dietary Restrictions:</span>
-                    <div className="flex flex-wrap gap-2 mt-2">
+                  <div className="bg-amber-50 dark:bg-amber-950/20 rounded-lg p-4 mt-4">
+                    <h3 className="font-medium mb-2">Dietary Restrictions</h3>
+                    <div className="flex flex-wrap gap-2">
                       {profile.dietaryRestrictions.map((restriction: string) => (
-                        <Badge key={restriction} variant="outline" className="capitalize">
+                        <Badge key={restriction} className="bg-white dark:bg-black/20 text-amber-700 dark:text-amber-300 border-amber-200 capitalize">
                           {restriction.replace(/-/g, " ")}
                         </Badge>
                       ))}
@@ -375,76 +470,111 @@ export default function PersonalizedPlansPage() {
               </div>
             )}
           </CardContent>
-          <CardFooter>
+          <CardFooter className="flex flex-col space-y-4 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-t">
             <Button
               onClick={handleGeneratePlan}
               disabled={generating || !profile}
-              className="w-full flex items-center justify-center gap-2"
+              className="w-full h-12 text-base font-medium"
+              size="lg"
             >
               {generating ? (
-                <>
-                  <RefreshCcw className="h-4 w-4 animate-spin" />
-                  Generating Plan...
-                </>
+                <div className="flex items-center gap-2">
+                  <RefreshCcw className="h-5 w-5 animate-spin" />
+                  Creating Your Plan...
+                </div>
               ) : (
-                "Generate Plan"
+                <div className="flex items-center gap-2">
+                  <Dumbbell className="h-5 w-5" />
+                  Generate Personalized Plan
+                </div>
               )}
             </Button>
+            
+            {generating && (
+              <p className="text-sm text-center text-muted-foreground">
+                Our AI is crafting a personalized plan based on your profile. This may take a moment...
+              </p>
+            )}
           </CardFooter>
         </Card>
       ) : (
-        <Card className="overflow-hidden">
-          <CardHeader className="bg-muted/30">
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Your Personalized Plan
+        // Plan View - Clean tabs and better structured content
+        <Card className="overflow-hidden shadow-lg border-none">
+          <CardHeader className="pb-0 pt-6 px-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-2xl">
+                  <Calendar className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                  Your Fitness Plan
             </CardTitle>
-            <CardDescription className="flex items-center gap-2">
-              <span>Created on {new Date(plan.createdAt.seconds * 1000).toLocaleDateString()}</span>
-              <Badge variant="outline" className="ml-2 capitalize">
+                <CardDescription className="mt-1">
+                  Created on {new Date(plan.createdAt.seconds * 1000).toLocaleDateString()}
+                </CardDescription>
+              </div>
+              
+              <div className="flex flex-wrap gap-2">
+                <Badge className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white border-none px-3 py-1 text-sm">
                 {profile?.fitnessGoal?.replace(/-/g, " ") || "General Fitness"}
               </Badge>
-            </CardDescription>
+                
+                <Badge variant="outline" className="bg-white/80 dark:bg-black/20">
+                  {profile?.activityLevel ? 
+                    profile.activityLevel.charAt(0).toUpperCase() + profile.activityLevel.slice(1) 
+                    : "Activity Level"}
+                </Badge>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent className="p-0">
+          
             <Tabs defaultValue="all" className="w-full">
-              <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0">
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-b px-6">
+              <TabsList className="h-16 bg-transparent justify-start space-x-4">
                 <TabsTrigger
                   value="all"
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-3"
+                  className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-primary data-[state=active]:shadow-sm rounded-t-lg rounded-b-none border-b-2 data-[state=active]:border-primary h-full px-5"
                 >
                   Complete Plan
                 </TabsTrigger>
                 <TabsTrigger
                   value="workout"
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-3"
+                  className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-primary data-[state=active]:shadow-sm rounded-t-lg rounded-b-none border-b-2 data-[state=active]:border-primary h-full px-5"
                 >
                   <Dumbbell className="h-4 w-4 mr-2" />
                   Workout
                 </TabsTrigger>
                 <TabsTrigger
                   value="nutrition"
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-3"
+                  className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-800 data-[state=active]:text-primary data-[state=active]:shadow-sm rounded-t-lg rounded-b-none border-b-2 data-[state=active]:border-primary h-full px-5"
                 >
                   <Utensils className="h-4 w-4 mr-2" />
                   Nutrition
                 </TabsTrigger>
               </TabsList>
+            </div>
 
-              <div className="p-6">
-                <TabsContent value="all" className="mt-0">
+            <div className="p-6 bg-white dark:bg-gray-800">
+              <TabsContent value="all" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
                   {(() => {
                     try {
                       const planData = JSON.parse(plan.content) as FitnessPlan;
                       return <PlanContent planData={planData} />;
                     } catch (error) {
                       console.error("Error parsing plan content:", error);
-                      return <p>Error displaying plan content. Please try generating a new plan.</p>;
+                    return (
+                      <div className="p-6 text-center">
+                        <div className="mb-4 text-amber-500">
+                          <AlertCircle className="h-12 w-12 mx-auto" />
+                        </div>
+                        <h3 className="text-xl font-medium mb-2">Error Displaying Plan</h3>
+                        <p className="text-muted-foreground">We encountered an issue with your plan data. Please try generating a new plan.</p>
+                      </div>
+                    );
                     }
                   })()}
                 </TabsContent>
 
-                <TabsContent value="workout" className="mt-0">
+              {/* Keep the existing workout and nutrition tab content */}
+              <TabsContent value="workout" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
                   {(() => {
                     try {
                       const planData = JSON.parse(plan.content) as FitnessPlan;
@@ -491,7 +621,7 @@ export default function PersonalizedPlansPage() {
                   })()}
                 </TabsContent>
 
-                <TabsContent value="nutrition" className="mt-0">
+              <TabsContent value="nutrition" className="mt-0 focus-visible:outline-none focus-visible:ring-0">
                   {(() => {
                     try {
                       const planData = JSON.parse(plan.content) as FitnessPlan;
@@ -559,12 +689,13 @@ export default function PersonalizedPlansPage() {
                 </TabsContent>
               </div>
             </Tabs>
-          </CardContent>
-          <CardFooter className="border-t bg-muted/30 px-6 py-4">
+          
+          <CardFooter className="border-t bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 px-6 py-4">
+            <div className="flex items-center justify-between w-full">
+              <p className="text-sm text-muted-foreground">Want a different approach? Generate a new plan anytime.</p>
             <Button
               onClick={handleGeneratePlan}
               disabled={generating}
-              variant="outline"
               className="flex items-center gap-2"
             >
               {generating ? (
@@ -573,9 +704,13 @@ export default function PersonalizedPlansPage() {
                   Generating...
                 </>
               ) : (
-                "Generate New Plan"
+                  <>
+                    <RefreshCcw className="h-4 w-4" />
+                    Generate New Plan
+                  </>
               )}
             </Button>
+            </div>
           </CardFooter>
         </Card>
       )}

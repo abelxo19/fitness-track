@@ -101,4 +101,66 @@
   body {
     @apply bg-background text-foreground;
   }
+  html, body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
+}
+
+/* Make sure all content containers take full width */
+@layer utilities {
+  .full-width-container {
+    width: 100%;
+    max-width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+  }
+}
+
+/* Dashboard specific fixes */
+.group\/sidebar-wrapper {
+  width: 100% !important;
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+/* Fix for the TabsContent to ensure full width */
+[role="tabpanel"] {
+  width: 100%;
+}
+
+/* Fix for cards to ensure proper sizing */
+.card-grid {
+  width: 100%;
+  display: grid;
+}
+
+/* Chart styles */
+.chart-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.recharts-responsive-container {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.recharts-surface {
+  overflow: visible;
+}
+
+/* Define fallback colors for charts in case variables aren't set */
+:root {
+  --color-workouts: hsl(var(--chart-1));
+  --color-duration: hsl(var(--chart-2));
+  --color-caloriesBurned: hsl(var(--chart-3));
+  --color-protein: hsl(var(--chart-1));
+  --color-carbs: hsl(var(--chart-2));
+  --color-fat: hsl(var(--chart-3));
+  --color-intensity: hsl(var(--chart-4));
 }

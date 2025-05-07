@@ -13,8 +13,39 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Slider } from "@/components/ui/slider"
-import { AlertCircle, Dumbbell } from "lucide-react"
+import { AlertCircle, Dumbbell, Flame, Activity } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { motion } from "framer-motion"
+import { Badge } from "@/components/ui/badge"
+
+// Animation variants
+const fadeIn = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.4 } }
+};
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const cardVariant = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { 
+      type: "spring", 
+      stiffness: 100, 
+      damping: 15 
+    }
+  }
+};
 
 export default function LogWorkoutPage() {
   const { user } = useAuth()
@@ -139,123 +170,204 @@ export default function LogWorkoutPage() {
     "Other",
   ]
 
+  // Get intensity badge color
+  const getIntensityColor = (intensity: string) => {
+    switch (intensity) {
+      case "low":
+        return "bg-green-50 border-green-200 text-green-700 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800";
+      case "medium":
+        return "bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800";
+      case "high":
+        return "bg-red-50 border-red-200 text-red-700 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800";
+      default:
+        return "bg-gray-50 border-gray-200 text-gray-700 dark:bg-gray-900/20 dark:text-gray-300 dark:border-gray-800";
+    }
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Log Workout</h1>
-        <p className="text-muted-foreground">Record your workout details to track your fitness progress.</p>
-      </div>
+    <motion.div 
+      className="max-w-7xl mx-auto space-y-8 px-4 py-6"
+      initial="hidden"
+      animate="visible"
+      variants={staggerContainer}
+    >
+      {/* Header with Gradient */}
+      <motion.div variants={fadeIn} className="relative overflow-hidden rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white shadow-lg">
+        <div className="relative z-10">
+          <h1 className="text-3xl font-bold tracking-tight mb-2">Log Your Workout</h1>
+          <p className="text-primary-foreground/80 max-w-xl">
+            Keep track of your exercise routine and monitor your fitness progress over time.
+          </p>
+          
+          <div className="flex flex-wrap gap-3 mt-4">
+            <Badge className="bg-white/20 hover:bg-white/30 text-white border-none">
+              {new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}
+            </Badge>
+          </div>
+        </div>
+        <div className="absolute right-0 bottom-0 opacity-20">
+          <Dumbbell className="h-32 w-32 text-white" />
+        </div>
+      </motion.div>
 
-      <Card className="max-w-2xl">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Dumbbell className="h-5 w-5" />
-            New Workout
-          </CardTitle>
-          <CardDescription>Fill in the details of your workout session</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {error && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
+      {error && (
+        <motion.div variants={fadeIn}>
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        </motion.div>
+      )}
 
-          {success && (
-            <Alert className="mb-4 bg-green-50 text-green-800 border-green-200">
-              <AlertDescription>Workout logged successfully! Redirecting to dashboard...</AlertDescription>
-            </Alert>
-          )}
+      {success && (
+        <motion.div variants={fadeIn}>
+          <Alert className="bg-green-50 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800">
+            <AlertDescription>Workout logged successfully! Redirecting to dashboard...</AlertDescription>
+          </Alert>
+        </motion.div>
+      )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="type">Workout Type</Label>
-              <Select value={workoutData.type} onValueChange={(value) => handleChange("type", value)} required>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select workout type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {workoutTypes.map((type) => (
-                    <SelectItem key={type} value={type.toLowerCase()}>
-                      {type}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+      <motion.div variants={cardVariant}>
+        <Card className="overflow-hidden border-none shadow-md">
+          <div className="h-1 bg-blue-500 w-full"></div>
+          <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900">
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <Dumbbell className="h-5 w-5 text-blue-500" />
+              New Workout
+            </CardTitle>
+            <CardDescription>Fill in the details of your workout session</CardDescription>
+          </CardHeader>
+          <CardContent className="p-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="type">Workout Type</Label>
+                  <Select value={workoutData.type} onValueChange={(value: string) => handleChange("type", value)} required>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select workout type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {workoutTypes.map((type) => (
+                        <SelectItem key={type} value={type.toLowerCase()}>
+                          {type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="duration">Duration (minutes)</Label>
-              <div className="flex items-center gap-4">
-                <Slider
-                  id="duration"
-                  min={5}
-                  max={180}
-                  step={5}
-                  value={[workoutData.duration]}
-                  onValueChange={(value) => handleChange("duration", value[0])}
-                  className="flex-1"
-                />
-                <Input
-                  type="number"
-                  value={workoutData.duration}
-                  onChange={(e) => handleChange("duration", Number.parseInt(e.target.value) || 0)}
-                  className="w-20"
-                  min={5}
-                  max={180}
+                <div className="space-y-2">
+                  <Label htmlFor="intensity">Intensity</Label>
+                  <Select value={workoutData.intensity} onValueChange={(value: string) => handleChange("intensity", value)}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select intensity" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">
+                        <div className="flex items-center gap-2">
+                          <span>Low</span>
+                          <Badge variant="outline" className={getIntensityColor("low") + " text-xs"}>low</Badge>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="medium">
+                        <div className="flex items-center gap-2">
+                          <span>Medium</span>
+                          <Badge variant="outline" className={getIntensityColor("medium") + " text-xs"}>medium</Badge>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="high">
+                        <div className="flex items-center gap-2">
+                          <span>High</span>
+                          <Badge variant="outline" className={getIntensityColor("high") + " text-xs"}>high</Badge>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="duration">Duration (minutes)</Label>
+                <div className="flex items-center gap-4">
+                  <Slider
+                    id="duration"
+                    min={5}
+                    max={180}
+                    step={5}
+                    value={[workoutData.duration]}
+                    onValueChange={(value: number[]) => handleChange("duration", value[0])}
+                    className="flex-1"
+                  />
+                  <Input
+                    type="number"
+                    value={workoutData.duration}
+                    onChange={(e) => handleChange("duration", Number.parseInt(e.target.value) || 0)}
+                    className="w-20"
+                    min={5}
+                    max={180}
+                  />
+                </div>
+              </div>
+
+              <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border border-gray-100 dark:border-gray-800">
+                <div className="flex items-center justify-between mb-2">
+                  <Label htmlFor="calories" className="text-base font-medium flex items-center gap-2">
+                    <Flame className="h-4 w-4 text-orange-500" />
+                    Estimated Calories Burned
+                  </Label>
+                  <Badge variant="outline" className={getIntensityColor(workoutData.intensity)}>
+                    {workoutData.intensity} intensity
+                  </Badge>
+                </div>
+                
+                <div className="flex items-center gap-4">
+                  <Input
+                    id="calories"
+                    type="number"
+                    value={workoutData.caloriesBurned}
+                    onChange={(e) => handleChange("caloriesBurned", Number.parseInt(e.target.value) || 0)}
+                    className="w-full"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  This is an estimate based on duration and intensity. Feel free to adjust if needed.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="notes" className="flex items-center gap-2">
+                  <Activity className="h-4 w-4 text-purple-500" />
+                  Notes (optional)
+                </Label>
+                <Textarea
+                  id="notes"
+                  placeholder="Add any additional details about your workout"
+                  value={workoutData.notes}
+                  onChange={(e) => handleChange("notes", e.target.value)}
+                  rows={3}
+                  className="resize-none"
                 />
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="intensity">Intensity</Label>
-              <Select value={workoutData.intensity} onValueChange={(value) => handleChange("intensity", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select intensity" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="low">Low</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="calories">Estimated Calories Burned</Label>
-              <Input
-                id="calories"
-                type="number"
-                value={workoutData.caloriesBurned}
-                onChange={(e) => handleChange("caloriesBurned", Number.parseInt(e.target.value) || 0)}
-              />
-              <p className="text-xs text-muted-foreground">
-                This is an estimate based on duration and intensity. Feel free to adjust.
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="notes">Notes (optional)</Label>
-              <Textarea
-                id="notes"
-                placeholder="Add any additional details about your workout"
-                value={workoutData.notes}
-                onChange={(e) => handleChange("notes", e.target.value)}
-                rows={3}
-              />
-            </div>
-          </form>
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button variant="outline" onClick={() => router.push("/dashboard")}>
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit} disabled={isLoading || !workoutData.type}>
-            {isLoading ? "Saving..." : "Save Workout"}
-          </Button>
-        </CardFooter>
-      </Card>
-    </div>
+            </form>
+          </CardContent>
+          <CardFooter className="flex justify-between px-6 py-4 bg-gray-50 dark:bg-gray-900">
+            <Button 
+              variant="outline" 
+              onClick={() => router.push("/dashboard")}
+              className="hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSubmit} 
+              disabled={isLoading || !workoutData.type}
+              className="bg-blue-500 hover:bg-blue-600 text-white"
+            >
+              {isLoading ? "Saving..." : "Save Workout"}
+            </Button>
+          </CardFooter>
+        </Card>
+      </motion.div>
+    </motion.div>
   )
 }

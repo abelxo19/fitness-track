@@ -70,7 +70,7 @@ export default function DashboardLayout({
 
   return (
     <SidebarProvider>
-      <div className="flex h-screen overflow-hidden">
+      <div className="flex h-screen w-full overflow-hidden max-w-[100vw]">
         <Sidebar>
           <SidebarHeader className="flex flex-col items-center justify-center p-4">
             <div className="flex items-center space-x-2">
@@ -109,12 +109,14 @@ export default function DashboardLayout({
             </div>
           </SidebarFooter>
         </Sidebar>
-        <main className="flex-1 overflow-y-auto bg-gray-50 p-4 md:p-6">
-          <div className="mx-auto max-w-7xl">
-            <div className="flex items-center md:hidden">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden bg-gray-50 p-0 w-full">
+          <div className="w-full h-full overflow-x-hidden">
+            <div className="flex items-center p-4 md:p-6 md:hidden">
               <SidebarTrigger />
             </div>
-            {children}
+            <div className="p-4 md:p-6 full-width-container">
+              {children}
+            </div>
           </div>
         </main>
       </div>

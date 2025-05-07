@@ -19,6 +19,8 @@ import {
   PieChart,
   RefreshCcw,
   Utensils,
+  TrendingUp,
+  BarChart2,
 } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
@@ -37,6 +39,37 @@ import {
   PieChart as RechartsPieChart,
   Tooltip,
 } from "recharts"
+import { motion } from "framer-motion"
+import { Badge } from "@/components/ui/badge"
+
+// Animation variants
+const fadeIn = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.4 } }
+};
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const cardVariant = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0,
+    transition: { 
+      type: "spring", 
+      stiffness: 100, 
+      damping: 15 
+    }
+  }
+};
 
 export default function AnalyticsPage() {
   const { user } = useAuth()
@@ -100,18 +133,22 @@ export default function AnalyticsPage() {
   const prepareWorkoutTypeData = () => {
     if (!analytics?.workoutStats?.workoutTypes) return []
 
-    return Object.entries(analytics.workoutStats.workoutTypes).map(([type, count]) => ({
+    return Object.entries(analytics.workoutStats.workoutTypes)
+      .filter(([_, count]) => (count as number) > 0)
+      .map(([type, count]) => ({
       name: type.charAt(0).toUpperCase() + type.slice(1),
-      value: count,
+        value: count as number,
     }))
   }
 
   const prepareMealTypeData = () => {
     if (!analytics?.nutritionStats?.mealTypes) return []
 
-    return Object.entries(analytics.nutritionStats.mealTypes).map(([type, count]) => ({
+    return Object.entries(analytics.nutritionStats.mealTypes)
+      .filter(([_, count]) => (count as number) > 0)
+      .map(([type, count]) => ({
       name: type.charAt(0).toUpperCase() + type.slice(1),
-      value: count,
+        value: count as number,
     }))
   }
 
@@ -120,7 +157,7 @@ export default function AnalyticsPage() {
 
     return Object.entries(analytics.workoutStats.monthlyStats)
       .map(([month, stats]: [string, any]) => ({
-        month,
+        month: formatMonthLabel(month),
         workouts: stats.workouts,
         duration: stats.duration,
         caloriesBurned: stats.caloriesBurned,
@@ -133,7 +170,7 @@ export default function AnalyticsPage() {
 
     return Object.entries(analytics.nutritionStats.monthlyStats)
       .map(([month, stats]: [string, any]) => ({
-        month,
+        month: formatMonthLabel(month),
         meals: stats.meals,
         calories: stats.calories,
         protein: stats.protein,
@@ -143,19 +180,38 @@ export default function AnalyticsPage() {
       .sort((a, b) => a.month.localeCompare(b.month))
   }
 
+  // Format month labels for charts (e.g., "2023-01" to "Jan 2023")
+  const formatMonthLabel = (monthKey: string) => {
+    try {
+      const [year, month] = monthKey.split('-');
+      const date = new Date(parseInt(year), parseInt(month) - 1);
+      return date.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+    } catch (e) {
+      return monthKey;
+    }
+  }
+
+  // Calculate the percentage change and add + sign for positive values
+  const formatTrend = (value: number) => {
+    if (!value) return "0%";
+    const sign = value > 0 ? "+" : "";
+    return `${sign}${value.toFixed(1)}%`;
+  }
+
   const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8", "#82ca9d"]
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="flex flex-col space-y-2">
-          <Skeleton className="h-8 w-64" />
+      <div className="max-w-7xl mx-auto space-y-8 px-4 py-6">
+        <div className="flex flex-col space-y-3">
+          <Skeleton className="h-10 w-64" />
           <Skeleton className="h-4 w-full max-w-md" />
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
-            <Card key={i}>
+            <Card key={i} className="border-none shadow-md">
+              <div className="h-1 bg-gradient-to-r from-blue-500 to-indigo-500 w-full"></div>
               <CardHeader className="pb-2">
                 <Skeleton className="h-4 w-32" />
               </CardHeader>
@@ -172,8 +228,9 @@ export default function AnalyticsPage() {
 
         <div className="grid gap-4 md:grid-cols-2">
           {[1, 2].map((i) => (
-            <Card key={i} className="h-80">
-              <CardHeader>
+            <Card key={i} className="h-80 border-none shadow-md">
+              <div className="h-1 bg-gradient-to-r from-purple-500 to-indigo-500 w-full"></div>
+              <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900">
                 <Skeleton className="h-5 w-32" />
                 <Skeleton className="h-4 w-24" />
               </CardHeader>
@@ -188,33 +245,60 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
-        <p className="text-muted-foreground">Track your fitness and nutrition progress over time.</p>
+    <motion.div 
+      className="max-w-7xl mx-auto space-y-8 px-4 py-6"
+      initial="hidden"
+      animate="visible"
+      variants={staggerContainer}
+    >
+      {/* Header with Gradient */}
+      <motion.div variants={fadeIn} className="relative overflow-hidden rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 p-6 text-white shadow-lg">
+        <div className="relative z-10">
+          <h1 className="text-3xl font-bold tracking-tight mb-2">Analytics Dashboard</h1>
+          <p className="text-primary-foreground/80 max-w-xl">
+            Review your fitness and nutrition statistics to see your progress over time.
+          </p>
+          
+          <div className="flex flex-wrap gap-3 mt-4">
+            <Badge className="bg-white/20 hover:bg-white/30 text-white border-none">
+              {new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}
+            </Badge>
+          </div>
+        </div>
+        <div className="absolute right-0 bottom-0 opacity-20">
+          <LineChart className="h-32 w-32 text-white" />
       </div>
+      </motion.div>
 
       {error && (
+        <motion.div variants={fadeIn}>
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{error}</AlertDescription>
         </Alert>
+        </motion.div>
       )}
 
       {!analytics ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart className="h-5 w-5" />
+        <motion.div variants={cardVariant}>
+          <Card className="overflow-hidden border-none shadow-md">
+            <div className="h-1 bg-blue-500 w-full"></div>
+            <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900">
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <BarChart className="h-5 w-5 text-blue-500" />
               No Analytics Data
             </CardTitle>
             <CardDescription>Start logging workouts and meals to see your analytics.</CardDescription>
           </CardHeader>
-          <CardContent>
+            <CardContent className="p-6">
             <p>Once you've logged some activities, we'll analyze your data and provide insights on your progress.</p>
           </CardContent>
-          <CardFooter>
-            <Button onClick={handleRecalculate} disabled={recalculating} className="flex items-center gap-2">
+            <CardFooter className="px-6 py-4 bg-gray-50 dark:bg-gray-900">
+              <Button 
+                onClick={handleRecalculate} 
+                disabled={recalculating} 
+                className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white"
+              >
               {recalculating ? (
                 <>
                   <RefreshCcw className="h-4 w-4 animate-spin" />
@@ -229,110 +313,167 @@ export default function AnalyticsPage() {
             </Button>
           </CardFooter>
         </Card>
+        </motion.div>
       ) : (
         <>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
+          {/* Stats Overview */}
+          <motion.div variants={fadeIn}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold">Fitness Overview</h2>
+              <Button
+                onClick={handleRecalculate}
+                variant="outline"
+                size="sm"
+                disabled={recalculating}
+                className="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              >
+                {recalculating ? (
+                  <>
+                    <RefreshCcw className="h-3 w-3 animate-spin" />
+                    <span>Recalculating...</span>
+                  </>
+                ) : (
+                  <>
+                    <RefreshCcw className="h-3 w-3" />
+                    <span>Refresh Data</span>
+                  </>
+                )}
+              </Button>
+            </div>
+          </motion.div>
+
+          {/* Stats Cards */}
+          <motion.div 
+            variants={fadeIn} 
+            className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"
+          >
+            <motion.div variants={cardVariant}>
+              <Card className="overflow-hidden border-none shadow-md hover:shadow-lg transition-shadow">
+                <div className="h-1 bg-blue-500 w-full"></div>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Workouts</CardTitle>
+                  <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
                 <Dumbbell className="h-4 w-4 text-blue-500" />
+                  </div>
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{analytics.workoutStats?.totalWorkouts || 0}</div>
-                <p className="text-xs text-muted-foreground">
-                  {analytics.workoutStats?.totalDuration || 0} minutes total
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <TrendingUp className="h-3 w-3" />
+                    <span>
+                      {formatTrend(analytics.workoutStats?.workoutTrend || 0)}
+                    </span>
+                    <span> vs last month</span>
                 </p>
               </CardContent>
             </Card>
+            </motion.div>
 
-            <Card>
+            <motion.div variants={cardVariant}>
+              <Card className="overflow-hidden border-none shadow-md hover:shadow-lg transition-shadow">
+                <div className="h-1 bg-orange-500 w-full"></div>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Meals</CardTitle>
-                <Utensils className="h-4 w-4 text-green-500" />
+                  <CardTitle className="text-sm font-medium">Total Calories Burned</CardTitle>
+                  <div className="h-8 w-8 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+                    <Flame className="h-4 w-4 text-orange-500" />
+                  </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{analytics.nutritionStats?.totalMeals || 0}</div>
-                <p className="text-xs text-muted-foreground">
-                  {analytics.nutritionStats?.totalCalories || 0} calories total
+                  <div className="text-2xl font-bold">{analytics.workoutStats?.totalCaloriesBurned || 0}</div>
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <TrendingUp className="h-3 w-3" />
+                    <span>
+                      {formatTrend(analytics.workoutStats?.caloriesTrend || 0)}
+                    </span>
+                    <span> vs last month</span>
                 </p>
               </CardContent>
             </Card>
+            </motion.div>
 
-            <Card>
+            <motion.div variants={cardVariant}>
+              <Card className="overflow-hidden border-none shadow-md hover:shadow-lg transition-shadow">
+                <div className="h-1 bg-green-500 w-full"></div>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Calories Burned</CardTitle>
-                <Flame className="h-4 w-4 text-orange-500" />
+                  <CardTitle className="text-sm font-medium">Total Meals Logged</CardTitle>
+                  <div className="h-8 w-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                    <Utensils className="h-4 w-4 text-green-500" />
+                  </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{analytics.workoutStats?.totalCaloriesBurned || 0}</div>
-                <p className="text-xs text-muted-foreground">All time total</p>
+                  <div className="text-2xl font-bold">{analytics.nutritionStats?.totalMeals || 0}</div>
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <TrendingUp className="h-3 w-3" />
+                    <span>
+                      {formatTrend(analytics.nutritionStats?.mealsTrend || 0)}
+                    </span>
+                    <span> vs last month</span>
+                  </p>
               </CardContent>
             </Card>
+            </motion.div>
 
-            <Card>
+            <motion.div variants={cardVariant}>
+              <Card className="overflow-hidden border-none shadow-md hover:shadow-lg transition-shadow">
+                <div className="h-1 bg-purple-500 w-full"></div>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Nutrition Balance</CardTitle>
+                  <CardTitle className="text-sm font-medium">Workout Duration</CardTitle>
+                  <div className="h-8 w-8 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
                 <Activity className="h-4 w-4 text-purple-500" />
+                  </div>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
-                  {analytics.nutritionStats?.totalProtein
-                    ? `${Math.round(analytics.nutritionStats.totalProtein)}g`
-                    : "0g"}
-                </div>
-                <p className="text-xs text-muted-foreground">Total protein consumed</p>
+                  <div className="text-2xl font-bold">{analytics.workoutStats?.totalDuration || 0} min</div>
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <TrendingUp className="h-3 w-3" />
+                    <span>
+                      {formatTrend(analytics.workoutStats?.durationTrend || 0)}
+                    </span>
+                    <span> vs last month</span>
+                  </p>
               </CardContent>
             </Card>
-          </div>
+            </motion.div>
+          </motion.div>
 
-          <div className="flex justify-end">
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-2"
-              onClick={handleRecalculate}
-              disabled={recalculating}
-            >
-              {recalculating ? (
-                <>
-                  <RefreshCcw className="h-3 w-3 animate-spin" />
-                  Recalculating...
-                </>
-              ) : (
-                <>
-                  <RefreshCcw className="h-3 w-3" />
-                  Recalculate Analytics
-                </>
-              )}
-            </Button>
+          {/* Tabs for different charts */}
+          <motion.div variants={fadeIn}>
+            <Tabs defaultValue="workouts" className="w-full">
+              <TabsList className="mb-4 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
+                <TabsTrigger value="workouts" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 rounded-md">
+                  <div className="flex items-center gap-2">
+                    <Dumbbell className="h-4 w-4" />
+                    <span>Workouts</span>
+                  </div>
+                </TabsTrigger>
+                <TabsTrigger value="nutrition" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 rounded-md">
+                  <div className="flex items-center gap-2">
+                    <Utensils className="h-4 w-4" />
+                    <span>Nutrition</span>
           </div>
-
-          <Tabs defaultValue="workouts">
-            <TabsList>
-              <TabsTrigger value="workouts">Workout Analytics</TabsTrigger>
-              <TabsTrigger value="nutrition">Nutrition Analytics</TabsTrigger>
-              <TabsTrigger value="reports">Weekly Reports</TabsTrigger>
+                </TabsTrigger>
+                <TabsTrigger value="trends" className="data-[state=active]:bg-white dark:data-[state=active]:bg-gray-700 rounded-md">
+                  <div className="flex items-center gap-2">
+                    <LineChart className="h-4 w-4" />
+                    <span>Trends</span>
+          </div>
+                </TabsTrigger>
             </TabsList>
 
             <TabsContent value="workouts" className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <PieChart className="h-5 w-5" />
+                  <motion.div variants={cardVariant}>
+                    <Card className="overflow-hidden border-none shadow-md">
+                      <div className="h-1 bg-blue-500 w-full"></div>
+                      <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900">
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <PieChart className="h-5 w-5 text-blue-500" />
                       Workout Types
                     </CardTitle>
                     <CardDescription>Distribution of your workout activities</CardDescription>
                   </CardHeader>
-                  <CardContent className="h-80">
-                    <ChartContainer
-                      config={{
-                        workout: {
-                          label: "Workout Types",
-                          color: "hsl(var(--chart-1))",
-                        },
-                      }}
-                    >
+                      <CardContent className="p-6">
+                        <div className="h-72">
                       <ResponsiveContainer width="100%" height="100%">
                         <RechartsPieChart>
                           <Pie
@@ -343,83 +484,74 @@ export default function AnalyticsPage() {
                             outerRadius={80}
                             fill="#8884d8"
                             dataKey="value"
-                            nameKey="name"
                             label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                           >
                             {prepareWorkoutTypeData().map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                             ))}
                           </Pie>
-                          <Tooltip content={ChartTooltipContent} />
+                              <Tooltip />
                           <Legend />
                         </RechartsPieChart>
                       </ResponsiveContainer>
-                    </ChartContainer>
+                        </div>
                   </CardContent>
                 </Card>
+                  </motion.div>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <LineChart className="h-5 w-5" />
-                      Monthly Progress
+                  <motion.div variants={cardVariant}>
+                    <Card className="overflow-hidden border-none shadow-md">
+                      <div className="h-1 bg-orange-500 w-full"></div>
+                      <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900">
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <BarChart className="h-5 w-5 text-orange-500" />
+                          Monthly Workout Stats
                     </CardTitle>
-                    <CardDescription>Your workout activity over time</CardDescription>
+                        <CardDescription>Your workout progress over time</CardDescription>
                   </CardHeader>
-                  <CardContent className="h-80">
-                    <ChartContainer
-                      config={{
-                        workouts: {
-                          label: "Workouts",
-                          color: "hsl(var(--chart-1))",
-                        },
-                        duration: {
-                          label: "Duration (min)",
-                          color: "hsl(var(--chart-2))",
-                        },
-                        caloriesBurned: {
-                          label: "Calories Burned",
-                          color: "hsl(var(--chart-3))",
-                        },
-                      }}
-                    >
-                      <ResponsiveContainer width="100%" height="100%">
-                        <RechartsLineChart data={prepareMonthlyWorkoutData()}>
+                      <CardContent className="p-6">
+                        <div className="h-72">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <RechartsBarChart
+                              data={prepareMonthlyWorkoutData()}
+                              margin={{
+                                top: 5,
+                                right: 30,
+                                left: 20,
+                                bottom: 5,
+                              }}
+                            >
                           <CartesianGrid strokeDasharray="3 3" />
                           <XAxis dataKey="month" />
-                          <YAxis />
-                          <Tooltip content={ChartTooltipContent} />
+                              <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
+                              <YAxis yAxisId="right" orientation="right" stroke="#FF8042" />
+                              <Tooltip />
                           <Legend />
-                          <Line type="monotone" dataKey="workouts" stroke="var(--color-workouts)" />
-                          <Line type="monotone" dataKey="duration" stroke="var(--color-duration)" />
-                          <Line type="monotone" dataKey="caloriesBurned" stroke="var(--color-caloriesBurned)" />
-                        </RechartsLineChart>
+                              <Bar yAxisId="left" dataKey="workouts" name="Workouts" fill="#8884d8" />
+                              <Bar yAxisId="right" dataKey="caloriesBurned" name="Calories Burned" fill="#FF8042" />
+                            </RechartsBarChart>
                       </ResponsiveContainer>
-                    </ChartContainer>
+                        </div>
                   </CardContent>
                 </Card>
+                  </motion.div>
               </div>
             </TabsContent>
 
             <TabsContent value="nutrition" className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <PieChart className="h-5 w-5" />
+                  <motion.div variants={cardVariant}>
+                    <Card className="overflow-hidden border-none shadow-md">
+                      <div className="h-1 bg-green-500 w-full"></div>
+                      <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900">
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <PieChart className="h-5 w-5 text-green-500" />
                       Meal Types
                     </CardTitle>
-                    <CardDescription>Distribution of your meal types</CardDescription>
+                        <CardDescription>Distribution of your meals by type</CardDescription>
                   </CardHeader>
-                  <CardContent className="h-80">
-                    <ChartContainer
-                      config={{
-                        meal: {
-                          label: "Meal Types",
-                          color: "hsl(var(--chart-1))",
-                        },
-                      }}
-                    >
+                      <CardContent className="p-6">
+                        <div className="h-72">
                       <ResponsiveContainer width="100%" height="100%">
                         <RechartsPieChart>
                           <Pie
@@ -430,110 +562,191 @@ export default function AnalyticsPage() {
                             outerRadius={80}
                             fill="#8884d8"
                             dataKey="value"
-                            nameKey="name"
                             label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                           >
                             {prepareMealTypeData().map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                             ))}
                           </Pie>
-                          <Tooltip content={ChartTooltipContent} />
+                              <Tooltip />
                           <Legend />
                         </RechartsPieChart>
                       </ResponsiveContainer>
-                    </ChartContainer>
+                        </div>
                   </CardContent>
                 </Card>
+                  </motion.div>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <BarChart className="h-5 w-5" />
-                      Macronutrient Distribution
+                  <motion.div variants={cardVariant}>
+                    <Card className="overflow-hidden border-none shadow-md">
+                      <div className="h-1 bg-purple-500 w-full"></div>
+                      <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900">
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <BarChart className="h-5 w-5 text-purple-500" />
+                          Monthly Nutrition Stats
                     </CardTitle>
-                    <CardDescription>Monthly protein, carbs, and fat intake</CardDescription>
+                        <CardDescription>Your nutrition tracking over time</CardDescription>
                   </CardHeader>
-                  <CardContent className="h-80">
-                    <ChartContainer
-                      config={{
-                        protein: {
-                          label: "Protein (g)",
-                          color: "hsl(var(--chart-1))",
-                        },
-                        carbs: {
-                          label: "Carbs (g)",
-                          color: "hsl(var(--chart-2))",
-                        },
-                        fat: {
-                          label: "Fat (g)",
-                          color: "hsl(var(--chart-3))",
-                        },
-                      }}
-                    >
-                      <ResponsiveContainer width="100%" height="100%">
-                        <RechartsBarChart data={prepareMonthlyNutritionData()}>
+                      <CardContent className="p-6">
+                        <div className="h-72">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <RechartsBarChart
+                              data={prepareMonthlyNutritionData()}
+                              margin={{
+                                top: 5,
+                                right: 30,
+                                left: 20,
+                                bottom: 5,
+                              }}
+                            >
                           <CartesianGrid strokeDasharray="3 3" />
                           <XAxis dataKey="month" />
                           <YAxis />
-                          <Tooltip content={ChartTooltipContent} />
+                              <Tooltip />
                           <Legend />
-                          <Bar dataKey="protein" fill="var(--color-protein)" />
-                          <Bar dataKey="carbs" fill="var(--color-carbs)" />
-                          <Bar dataKey="fat" fill="var(--color-fat)" />
+                              <Bar dataKey="calories" name="Calories" fill="#8884d8" />
+                              <Bar dataKey="protein" name="Protein (g)" fill="#82ca9d" />
+                              <Bar dataKey="carbs" name="Carbs (g)" fill="#ffc658" />
+                              <Bar dataKey="fat" name="Fat (g)" fill="#ff8042" />
                         </RechartsBarChart>
                       </ResponsiveContainer>
-                    </ChartContainer>
+                        </div>
                   </CardContent>
                 </Card>
+                  </motion.div>
               </div>
             </TabsContent>
 
-            <TabsContent value="reports" className="space-y-4">
-              {reports.length > 0 ? (
+              <TabsContent value="trends" className="space-y-4">
+                <motion.div variants={cardVariant}>
+                  <Card className="overflow-hidden border-none shadow-md">
+                    <div className="h-1 bg-indigo-500 w-full"></div>
+                    <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900">
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <LineChart className="h-5 w-5 text-indigo-500" />
+                        Workout Duration Trends
+                      </CardTitle>
+                      <CardDescription>Your workout durations over time</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                      <div className="h-72">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <RechartsLineChart
+                            data={prepareMonthlyWorkoutData()}
+                            margin={{
+                              top: 5,
+                              right: 30,
+                              left: 20,
+                              bottom: 5,
+                            }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="month" />
+                            <YAxis />
+                            <Tooltip />
+                            <Legend />
+                            <Line
+                              type="monotone"
+                              dataKey="duration"
+                              name="Duration (min)"
+                              stroke="#8884d8"
+                              activeDot={{ r: 8 }}
+                            />
+                          </RechartsLineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+
                 <div className="grid gap-4 md:grid-cols-2">
-                  {reports.map((report, index) => (
-                    <Card key={index}>
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <Calendar className="h-5 w-5" />
-                          Weekly Report
+                  <motion.div variants={cardVariant}>
+                    <Card className="overflow-hidden border-none shadow-md">
+                      <div className="h-1 bg-blue-500 w-full"></div>
+                      <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900">
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <LineChart className="h-5 w-5 text-blue-500" />
+                          Workout Frequency
                         </CardTitle>
-                        <CardDescription>
-                          {new Date(report.stats.startDate.seconds * 1000).toLocaleDateString()} to{" "}
-                          {new Date(report.stats.endDate.seconds * 1000).toLocaleDateString()}
-                        </CardDescription>
+                        <CardDescription>Number of workouts per month</CardDescription>
                       </CardHeader>
-                      <CardContent>
-                        <div className="space-y-4">
-                          <div>
-                            <h4 className="font-medium">Workout Summary</h4>
-                            <div className="grid grid-cols-2 gap-2 mt-2">
-                              <div>
-                                <p className="text-sm text-muted-foreground">Workouts</p>
-                                <p className="text-lg font-medium">{report.stats.workouts}</p>
+                      <CardContent className="p-6">
+                        <div className="h-72">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <RechartsLineChart
+                              data={prepareMonthlyWorkoutData()}
+                              margin={{
+                                top: 5,
+                                right: 30,
+                                left: 20,
+                                bottom: 5,
+                              }}
+                            >
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="month" />
+                              <YAxis />
+                              <Tooltip />
+                              <Legend />
+                              <Line
+                                type="monotone"
+                                dataKey="workouts"
+                                name="Workouts"
+                                stroke="#0088FE"
+                                activeDot={{ r: 8 }}
+                              />
+                            </RechartsLineChart>
+                          </ResponsiveContainer>
                               </div>
-                              <div>
-                                <p className="text-sm text-muted-foreground">Duration</p>
-                                <p className="text-lg font-medium">{report.stats.duration} min</p>
-                              </div>
-                            </div>
-                          </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+
+                  <motion.div variants={cardVariant}>
+                    <Card className="overflow-hidden border-none shadow-md">
+                      <div className="h-1 bg-green-500 w-full"></div>
+                      <CardHeader className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900">
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <LineChart className="h-5 w-5 text-green-500" />
+                          Nutrition Tracking
+                        </CardTitle>
+                        <CardDescription>Number of meals logged per month</CardDescription>
+                      </CardHeader>
+                      <CardContent className="p-6">
+                        <div className="h-72">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <RechartsLineChart
+                              data={prepareMonthlyNutritionData()}
+                              margin={{
+                                top: 5,
+                                right: 30,
+                                left: 20,
+                                bottom: 5,
+                              }}
+                            >
+                              <CartesianGrid strokeDasharray="3 3" />
+                              <XAxis dataKey="month" />
+                              <YAxis />
+                              <Tooltip />
+                              <Legend />
+                              <Line
+                                type="monotone"
+                                dataKey="meals"
+                                name="Meals"
+                                stroke="#00C49F"
+                                activeDot={{ r: 8 }}
+                              />
+                            </RechartsLineChart>
+                          </ResponsiveContainer>
                         </div>
                       </CardContent>
                     </Card>
-                  ))}
+                  </motion.div>
                 </div>
-              ) : (
-                <Card>
-                  <CardContent className="pt-6">
-                    <p className="text-center text-muted-foreground">No weekly reports available yet.</p>
-                  </CardContent>
-                </Card>
-              )}
             </TabsContent>
           </Tabs>
+          </motion.div>
         </>
       )}
-    </div>
-  )
+    </motion.div>
+  );
 }

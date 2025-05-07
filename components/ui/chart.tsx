@@ -1,9 +1,8 @@
 "use client"
 
 import { Tooltip } from "@/components/ui/tooltip"
-
+import { useEffect, useRef } from "react"
 import type React from "react"
-
 import type { ReactNode } from "react"
 
 interface ChartContainerProps {
@@ -12,7 +11,18 @@ interface ChartContainerProps {
 }
 
 export function ChartContainer({ children, config }: ChartContainerProps) {
-  return <div className="w-full">{children}</div>
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Apply the colors from config as CSS variables
+  useEffect(() => {
+    if (containerRef.current && config) {
+      Object.entries(config).forEach(([key, { color }]) => {
+        containerRef.current?.style.setProperty(`--color-${key}`, color);
+      });
+    }
+  }, [config]);
+
+  return <div ref={containerRef} className="w-full chart-container">{children}</div>
 }
 
 interface ChartTooltipContentProps {
