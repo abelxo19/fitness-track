@@ -129,18 +129,6 @@ export default function LandingPage() {
                       </Button>
                     </Link>
                   </motion.div>
-                  <motion.div variants={slideUp}>
-                    <Link href="/dashboard/plans">
-                      <Button 
-                        variant="outline" 
-                        size="lg" 
-                        className="w-full sm:w-auto border-primary/30 text-foreground hover:bg-primary/10 hover:text-primary transition-all duration-300"
-                      >
-                        Try Sample Plans
-                        <ChevronRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </Link>
-                  </motion.div>
                 </motion.div>
                 
                 <motion.div 
