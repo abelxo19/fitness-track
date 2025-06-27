@@ -70,6 +70,50 @@ export interface FitnessPlan {
 
 const genAI = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY! });
 
+// Ethiopian food recipes with nutritional information for fitness
+const ethiopianFoods = [
+  {
+    name: "Azifa (Ethiopian Lentil Salad)",
+    description: "A protein-rich cold lentil dish with jalapeño, onions, lime juice, and spices. High in protein and fiber, making it perfect for post-workout recovery.",
+    recipe: "1 cup green lentils, 1 jalapeño pepper (seeded and finely chopped), 1/4 cup finely chopped onions, 1 tsp ginger powder, 1/4 tsp turmeric, 3 tbsp lime juice, 2 tbsp olive oil. Boil lentils until soft, drain and cool. Mix with remaining ingredients.",
+    fitnessValue: "High in plant protein (18g per serving), fiber, and complex carbohydrates. Contains anti-inflammatory turmeric and ginger.",
+    calories: "Around 250-300 calories per serving",
+    macros: "18g protein, 35g carbs, 8g fat"
+  },
+  {
+    name: "Gomen (Ethiopian Collard Greens)",
+    description: "A nutrient-dense dish of collard greens or kale with garlic, ginger and olive oil. Excellent source of vitamins, minerals and antioxidants.",
+    recipe: "1 pound collard greens or kale, 1/2 cup chopped onions, 2 tbsp olive oil, 1/2 tsp chopped garlic, 1/2 tsp ginger powder. Remove stems from greens, boil until tender. Sauté onions and garlic in oil, add ginger and cooked greens.",
+    fitnessValue: "Rich in vitamins A, C, K, calcium, iron and folate. Supports recovery and reduces inflammation.",
+    calories: "Around 120-150 calories per serving",
+    macros: "4g protein, 10g carbs, 8g fat"
+  },
+  {
+    name: "Misir Wot (Spiced Red Lentils)",
+    description: "A hearty, protein-packed red lentil stew with berbere spice. Great for muscle recovery and sustained energy.",
+    recipe: "1 cup red lentils, 1/2 cup chopped onions, 2 tbsp olive oil, 1-2 tbsp berbere spice blend, 1 tsp minced garlic, 1/2 tsp ginger. Sauté onions in oil, add berbere, garlic and ginger. Add lentils and water, simmer until cooked.",
+    fitnessValue: "Excellent vegan protein source. Berbere contains capsaicin which may boost metabolism.",
+    calories: "Around 250-300 calories per serving",
+    macros: "15g protein, 40g carbs, 7g fat"
+  },
+  {
+    name: "Kochkocha (Ethiopian Salsa)",
+    description: "A fresh, low-calorie condiment made with jalapeños, onions, and spices. Great for adding flavor without excess calories.",
+    recipe: "8 jalapeño peppers, 2 tbsp chopped onions, 1/2 tsp ginger, 1/2 tsp cardamom, 1/2 tsp coriander, 1/4 tsp cumin, 1/2 tsp basil, olive oil. Cook peppers and onions in oil, blend with spices until smooth.",
+    fitnessValue: "Low calorie, capsaicin in jalapeños may boost metabolism and reduce appetite.",
+    calories: "Around 30-40 calories per serving",
+    macros: "1g protein, 3g carbs, 2g fat"
+  },
+  {
+    name: "Ethiopian Cole Slaw",
+    description: "A refreshing cabbage and carrot slaw with jalapeños, olive oil, and lemon juice. Good source of vitamins and fiber.",
+    recipe: "3 large carrots, 4 jalapeño peppers, 1 pound cabbage, 3 tbsp olive oil, 1 tsp balsamic vinegar, 2 tbsp lemon juice. Cut veggies into small pieces, toss with oil, vinegar and lemon juice.",
+    fitnessValue: "Rich in fiber, vitamins A and C. Low calorie and aids digestion.",
+    calories: "Around 100-120 calories per serving",
+    macros: "2g protein, 15g carbs, 5g fat"
+  }
+];
+
 export async function generateFitnessPlan(profile: UserProfile): Promise<FitnessPlan> {
   try {
     // Generate a random training style to introduce variety
@@ -118,6 +162,26 @@ export async function generateFitnessPlan(profile: UserProfile): Promise<Fitness
     // Create a unique timestamp identifier to ensure variety
     const uniqueId = Date.now().toString().slice(-5);
     
+    // Randomly select 2 Ethiopian dishes to incorporate, ensuring they match dietary restrictions
+    let selectedEthiopianFoods = [...ethiopianFoods];
+    
+    // Filter out dishes that conflict with dietary restrictions
+    if (profile.dietaryRestrictions?.length) {
+      if (profile.dietaryRestrictions.includes("vegetarian") || profile.dietaryRestrictions.includes("vegan")) {
+        // All the Ethiopian dishes above are already plant-based, but this is where we'd filter if needed
+      }
+    }
+    
+    // Shuffle and take the first 2
+    selectedEthiopianFoods = selectedEthiopianFoods
+      .sort(() => 0.5 - Math.random())
+      .slice(0, 2);
+    
+    // Create Ethiopian food suggestions for the prompt
+    const ethiopianFoodSuggestions = selectedEthiopianFoods.map(food => 
+      `${food.name}: ${food.description} - ${food.fitnessValue} - Recipe: ${food.recipe} - Nutrition: ${food.calories}, ${food.macros}`
+    ).join("\n\n");
+    
     const prompt = `Generate a comprehensive fitness and nutrition plan for a user with the following profile:
     Age: ${profile.age}
     Gender: ${profile.gender}
@@ -139,11 +203,18 @@ export async function generateFitnessPlan(profile: UserProfile): Promise<Fitness
     6. Use very specific exercises rather than generic ones
     7. Include specific food suggestions with quantities
 
+    VERY IMPORTANT - ETHIOPIAN FOOD INTEGRATION:
+    Include the following Ethiopian dishes in your meal plans (incorporate 1-2 of these across the week, not all at once):
+    
+    ${ethiopianFoodSuggestions}
+    
+    These Ethiopian dishes should replace 1-2 regular meals in the weekly plan. They should be integrated naturally within the meal plan and matched to appropriate times of day based on their nutritional profile and the user's goals.
+
     IMPORTANT: You must return a valid JSON object with the following structure. Do not include any markdown, text, or explanations outside the JSON:
     {
       "initialAssessment": "A brief 2-3 sentence assessment of the user's current state and goals",
       "nutritionPlan": {
-        "overview": "A brief overview of the nutrition strategy",
+        "overview": "A brief overview of the nutrition strategy that mentions incorporating Ethiopian dishes for nutritional variety",
         "dailyCalories": "Recommended daily calorie intake (e.g., '2000-2200 calories')",
         "macros": {
           "protein": "Protein target in grams (e.g., '120-150g')",
@@ -194,7 +265,8 @@ export async function generateFitnessPlan(profile: UserProfile): Promise<Fitness
     3. No explanations outside the JSON
     4. All text values should be strings
     5. Include at least 3 workout days and 2 meal plans
-    6. Make tips specific and actionable`
+    6. Make tips specific and actionable
+    7. Be sure to include 1-2 of the Ethiopian dishes in the meal plans`
 
     const response = await genAI.models.generateContent({
       model: "gemini-2.0-flash",
