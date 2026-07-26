@@ -52,6 +52,7 @@
     "firebase": "latest",
     "firebase-admin": "latest",
     "firebase-functions": "latest",
+    "@supabase/supabase-js": "^2.35.0",
     "framer-motion": "^12.9.4",
     "input-otp": "1.4.1",
     "lucide-react": "^0.454.0",

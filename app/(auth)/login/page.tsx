@@ -4,7 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
-import { signInWithEmailAndPassword } from "firebase/auth"
+import { useAuth } from "@/contexts/auth-context"
 import { motion } from "framer-motion"
 import { auth } from "@/lib/firebase"
 import { Button } from "@/components/ui/button"
@@ -47,6 +47,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const { signIn } = useAuth()
   const { toast } = useToast()
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -54,7 +55,7 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      await signInWithEmailAndPassword(auth, email, password)
+      await signIn(email, password)
       router.push("/dashboard")
       toast({
         title: "Success",

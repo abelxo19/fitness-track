@@ -1,12 +1,11 @@
 "use client"
 
 import { createContext, useContext, useEffect, useState } from "react"
-import { User, onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth"
-import { auth } from "@/lib/firebase"
+import { supabase } from "@/lib/supabase"
 import { useRouter, usePathname } from "next/navigation"
 
 interface AuthContextType {
-  user: User | null
+  user: any | null
   loading: boolean
   logout: () => Promise<void>
   signUp: (email: string, password: string) => Promise<any>
@@ -28,18 +27,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
 
   useEffect(() => {
-    if (!auth) {
-      console.error("Firebase auth is not initialized")
-      setLoading(false)
-      return
-    }
-
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      const user = session?.user || null
       console.log("Auth state changed:", user ? "User logged in" : "No user")
       setUser(user)
       setLoading(false)
 
-      // Handle route protection
       if (!user && pathname?.startsWith('/dashboard')) {
         router.push('/')
       } else if (user && pathname === '/') {
@@ -47,13 +40,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     })
 
-    return () => unsubscribe()
+    // Check initial session
+    supabase.auth.getSession().then(({ data }) => {
+      setUser(data.session?.user ?? null)
+      setLoading(false)
+    })
+
+    return () => listener?.subscription?.unsubscribe?.()
   }, [pathname, router])
 
   const logout = async () => {
-    if (!auth) throw new Error("Firebase auth is not initialized")
     try {
-      await signOut(auth)
+      await supabase.auth.signOut()
       router.push('/')
     } catch (error) {
       console.error("Error signing out:", error)
@@ -62,12 +60,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signUp = async (email: string, password: string) => {
-    if (!auth) throw new Error("Firebase auth is not initialized")
     try {
       console.log("Attempting to sign up with email:", email)
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password)
-      console.log("Sign up successful:", userCredential.user.uid)
-      return userCredential
+      const { data, error } = await supabase.auth.signUp({ email, password })
+      if (error) throw error
+      return data
     } catch (error: any) {
       console.error("Error signing up:", error)
       throw error
@@ -75,12 +72,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signIn = async (email: string, password: string) => {
-    if (!auth) throw new Error("Firebase auth is not initialized")
     try {
       console.log("Attempting to sign in with email:", email)
-      const userCredential = await signInWithEmailAndPassword(auth, email, password)
-      console.log("Sign in successful:", userCredential.user.uid)
-      return userCredential
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+      if (error) throw error
+      return data
     } catch (error: any) {
       console.error("Error signing in:", error)
       throw error

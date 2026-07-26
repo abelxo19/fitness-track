@@ -7,6 +7,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { useAuth } from "@/contexts/auth-context"
+import { supabase } from "@/lib/supabase"
 import { createUserProfile } from "@/lib/firestore"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -81,9 +82,18 @@ export default function SignupPage() {
     try {
       const userCredential = await signUp(email, password)
 
-      // Create user profile in Firestore
-      if (userCredential && userCredential.user) {
-        await createUserProfile(userCredential.user.uid, {
+      // Determine user id (Supabase returns user in different shapes)
+      let userId: string | null = null
+      if (userCredential && (userCredential as any).user && (userCredential as any).user.id) {
+        userId = (userCredential as any).user.id
+      } else {
+        const { data } = await supabase.auth.getUser()
+        userId = data?.user?.id ?? null
+      }
+
+      // Create user profile in DB
+      if (userId) {
+        await createUserProfile(userId, {
           name,
           email,
           fitnessGoal: "general",

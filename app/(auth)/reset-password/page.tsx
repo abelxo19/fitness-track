@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { sendPasswordResetEmail } from "firebase/auth"
+import { supabase } from "@/lib/supabase"
 import { motion } from "framer-motion"
 import { auth } from "@/lib/firebase"
 import { Button } from "@/components/ui/button"
@@ -40,7 +40,8 @@ export default function ResetPasswordPage() {
     setLoading(true)
 
     try {
-      await sendPasswordResetEmail(auth, email)
+      const { data, error } = await supabase.auth.resetPasswordForEmail(email)
+      if (error) throw error
       toast({
         title: "Success",
         description: "Password reset email sent. Please check your inbox.",
